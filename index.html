@@ -49,6 +49,7 @@ h1, h2, h3, .kpi .value, .how-card .num, .slider-val {
   border-radius: 3px;
   padding: 32px;
   margin: 24px 0;
+  overflow: hidden;
 }
 .section h2 {
   font-size: 1.3em;
@@ -194,8 +195,10 @@ h1, h2, h3, .kpi .value, .how-card .num, .slider-val {
   gap: 2px;
   height: 100px;
   margin: 4px 0;
+  width: 100%;
+  overflow: hidden;
 }
-.metric-wrapper { margin: 8px 0; }
+.metric-wrapper { margin: 8px 0; overflow: hidden; max-width: 100%; }
 .metric-wrapper .m-label {
   color: var(--dim);
   font-size: 0.82em;
