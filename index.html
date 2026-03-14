@@ -453,13 +453,57 @@ input[type=range]::-moz-range-track {
 }
 .deeper-link:hover { border-bottom-color: var(--accent); }
 
+/* Timeline switcher */
+.tl-switcher {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.tl-btn {
+  font-family: 'Inter', 'Helvetica Neue', sans-serif;
+  font-size: 0.78em;
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  color: var(--dim);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tl-btn:hover { border-color: var(--dim); color: var(--text); }
+.tl-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(142,170,220,0.08); }
+.tl-outcome-tag {
+  font-family: 'Inter', 'Helvetica Neue', sans-serif;
+  display: inline-block;
+  font-size: 0.72em;
+  padding: 2px 8px;
+  border-radius: 2px;
+  margin-bottom: 16px;
+  font-weight: 500;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
-  .hero { padding: 40px 20px; }
-  .hero h1 { font-size: 1.6em; }
-  .section { padding: 20px; }
+  html, body { overflow-x: hidden; width: 100%; }
+  .hero { padding: 32px 16px; }
+  .hero h1 { font-size: 1.4em; }
+  .container { padding: 12px; }
+  .section { padding: 16px; margin: 12px 0; }
   .how-grid { grid-template-columns: 1fr; }
   .arch-grid { grid-template-columns: 1fr; }
+  .deeper-grid { grid-template-columns: 1fr; }
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .metric-track { height: 60px; padding-left: 0; }
+  .metric-wrapper .m-label { position: static; width: auto; text-align: left; padding: 0 0 4px 0; }
+  .tl-narrative { margin-left: 10px; padding-left: 18px; }
+  .tl-dot { left: -24px; }
+  .tl-actions { gap: 4px; }
+  .tl-tag { font-size: 0.65em; padding: 2px 5px; }
+  .slider-label { flex-direction: column; gap: 4px; align-items: flex-start; }
+  .whatif-table { font-size: 0.75em; }
+  .whatif-table th, .whatif-table td { padding: 6px 4px; }
+  .outcome-legend { gap: 12px; }
+  .tl-switcher { flex-wrap: wrap; }
 }
 </style>
 </head>
@@ -526,9 +570,11 @@ input[type=range]::-moz-range-track {
 
 <!-- TIMELINE -->
 <div class="section">
-  <h2>One Simulated War, Step by Step</h2>
-  <div class="desc">This is simulation #42 out of 500 — a single "run" of the model. Each round is ~2 weeks. Watch how strategies shift as the situation changes. This particular run ends in a coalition limited victory after 10 rounds.</div>
+  <h2>Simulated Wars, Step by Step</h2>
+  <div class="desc">Each button shows a different simulation run. Same model, different random seed — different war. Compare how small changes in luck lead to completely different outcomes.</div>
 
+  <div class="tl-switcher" id="tl-switcher"></div>
+  <div class="tl-outcome-tag" id="tl-outcome-tag"></div>
   <div class="tl-narrative" id="timeline-narrative"></div>
 
   <div style="margin-top:24px">
@@ -652,7 +698,7 @@ input[type=range]::-moz-range-track {
 // ============================================================
 // EMBEDDED DATA
 // ============================================================
-const DATA = {"timeline": {"outcome": "coalition_limited_victory", "rounds": [{"round": 1, "date": "2026-03-01", "usa": "air_strikes", "iran": "proxy_escalation", "israel": "independent_ops", "hez": "calibrated", "oil": 87.2, "hormuz": 100, "iran_mil": 51.6, "usa_cas": 0, "iran_cas": 0.18, "israel_cas": 0.06, "usa_support": 52.7, "iran_support": 70, "recession_risk": 0.0, "iran_missiles": 67.7, "hez_missiles": 81.0, "shocks": []}, {"round": 2, "date": "2026-03-02", "usa": "standoff_only", "iran": "proxy_escalation", "israel": "joint_strikes", "hez": "calibrated", "oil": 85.3, "hormuz": 100, "iran_mil": 48.6, "usa_cas": 0, "iran_cas": 0.33, "israel_cas": 0.13, "usa_support": 49.3, "iran_support": 71.4, "recession_risk": 0.0, "iran_missiles": 64.7, "hez_missiles": 77.9, "shocks": []}, {"round": 3, "date": "2026-03-03", "usa": "standoff_only", "iran": "proxy_escalation", "israel": "independent_ops", "hez": "calibrated", "oil": 84.1, "hormuz": 100, "iran_mil": 43.4, "usa_cas": 0, "iran_cas": 0.42, "israel_cas": 0.17, "usa_support": 47.2, "iran_support": 72.2, "recession_risk": 0.0, "iran_missiles": 61.2, "hez_missiles": 71.4, "shocks": []}, {"round": 4, "date": "2026-03-04", "usa": "standoff_only", "iran": "retaliate", "israel": "joint_strikes", "hez": "full_barrage", "oil": 83.8, "hormuz": 100, "iran_mil": 36.3, "usa_cas": 0.01, "iran_cas": 0.63, "israel_cas": 0.33, "usa_support": 46.3, "iran_support": 74.8, "recession_risk": 0.0, "iran_missiles": 56.4, "hez_missiles": 58.7, "shocks": []}, {"round": 5, "date": "2026-03-05", "usa": "standoff_only", "iran": "proxy_escalation", "israel": "defensive_posture", "hez": "calibrated", "oil": 83.5, "hormuz": 100, "iran_mil": 33.4, "usa_cas": 0.01, "iran_cas": 0.84, "israel_cas": 0.35, "usa_support": 42.2, "iran_support": 77.0, "recession_risk": 0.0, "iran_missiles": 53.1, "hez_missiles": 52.1, "shocks": []}, {"round": 6, "date": "2026-03-06", "usa": "ground_operation", "iran": "attrition", "israel": "defensive_posture", "hez": "calibrated", "oil": 83.2, "hormuz": 100, "iran_mil": 19.6, "usa_cas": 0.1, "iran_cas": 1.45, "israel_cas": 0.36, "usa_support": 37.9, "iran_support": 79.7, "recession_risk": 0.0, "iran_missiles": 53.1, "hez_missiles": 46.7, "shocks": []}, {"round": 7, "date": "2026-03-07", "usa": "standoff_only", "iran": "hormuz_blockade", "israel": "defensive_posture", "hez": "full_barrage", "oil": 122.6, "hormuz": 62.1, "iran_mil": 15.0, "usa_cas": 0.1, "iran_cas": 1.59, "israel_cas": 0.44, "usa_support": 37.9, "iran_support": 81.1, "recession_risk": 0.0, "iran_missiles": 50.3, "hez_missiles": 36.5, "shocks": []}, {"round": 8, "date": "2026-03-10", "usa": "air_strikes", "iran": "hormuz_blockade", "israel": "joint_strikes", "hez": "ceasefire", "oil": 161.0, "hormuz": 56.1, "iran_mil": 7.2, "usa_cas": 0.15, "iran_cas": 2.25, "israel_cas": 0.44, "usa_support": 40.9, "iran_support": 82.3, "recession_risk": 0.0, "iran_missiles": 46.4, "hez_missiles": 36.5, "shocks": ["iraqi_militia_attacks_us_base:A"]}, {"round": 9, "date": "2026-03-13", "usa": "air_strikes", "iran": "hormuz_blockade", "israel": "joint_strikes", "hez": "calibrated", "oil": 186.8, "hormuz": 45.7, "iran_mil": 0, "usa_cas": 0.15, "iran_cas": 2.46, "israel_cas": 0.45, "usa_support": 40.9, "iran_support": 88.0, "recession_risk": 0.0, "iran_missiles": 42.8, "hez_missiles": 31.4, "shocks": []}, {"round": 10, "date": "2026-03-16", "usa": "declare_victory", "iran": "proxy_escalation", "israel": "defensive_posture", "hez": "calibrated", "oil": 191.4, "hormuz": 47.3, "iran_mil": 0.0, "usa_cas": 0.15, "iran_cas": 2.46, "israel_cas": 0.47, "usa_support": 41.6, "iran_support": 86.3, "recession_risk": 0.16, "iran_missiles": 39.2, "hez_missiles": 25.7, "shocks": []}]}, "sensitivity_usa_patience": {"0.7": {"outcomes": {"coalition_decisive_victory": 1.3, "coalition_limited_victory": 66.0, "iran_strategic_victory": 32.7}, "avg_rounds": 10.2, "avg_oil": 130.4, "nuclear": 17.3, "usa_cas": 0.29, "iran_cas": 2.28, "recession": 0.12}, "0.75": {"outcomes": {"coalition_decisive_victory": 1.7, "coalition_limited_victory": 67.0, "iran_strategic_victory": 31.0, "negotiated_settlement": 0.3}, "avg_rounds": 10.7, "avg_oil": 131.7, "nuclear": 21.0, "usa_cas": 0.27, "iran_cas": 2.32, "recession": 0.13}, "0.78": {"outcomes": {"coalition_decisive_victory": 3.0, "coalition_limited_victory": 67.7, "iran_strategic_victory": 29.0, "negotiated_settlement": 0.3}, "avg_rounds": 10.9, "avg_oil": 134.4, "nuclear": 22.7, "usa_cas": 0.27, "iran_cas": 2.37, "recession": 0.14}, "0.82": {"outcomes": {"coalition_decisive_victory": 2.3, "coalition_limited_victory": 70.3, "iran_strategic_victory": 27.0, "negotiated_settlement": 0.3}, "avg_rounds": 11.2, "avg_oil": 136.3, "nuclear": 21.0, "usa_cas": 0.24, "iran_cas": 2.37, "recession": 0.16}, "0.85": {"outcomes": {"coalition_decisive_victory": 3.0, "coalition_limited_victory": 72.7, "iran_strategic_victory": 24.0, "negotiated_settlement": 0.3}, "avg_rounds": 11.5, "avg_oil": 137.7, "nuclear": 22.3, "usa_cas": 0.21, "iran_cas": 2.38, "recession": 0.18}, "0.88": {"outcomes": {"coalition_decisive_victory": 1.7, "coalition_limited_victory": 74.7, "iran_strategic_victory": 23.7}, "avg_rounds": 11.5, "avg_oil": 138.5, "nuclear": 23.0, "usa_cas": 0.2, "iran_cas": 2.38, "recession": 0.18}, "0.93": {"outcomes": {"coalition_decisive_victory": 3.7, "coalition_limited_victory": 77.3, "iran_strategic_victory": 19.0}, "avg_rounds": 11.9, "avg_oil": 139.2, "nuclear": 22.3, "usa_cas": 0.15, "iran_cas": 2.39, "recession": 0.18}}, "sensitivity_oil": {"75": {"outcomes": {"coalition_decisive_victory": 3.7, "coalition_limited_victory": 72.0, "iran_strategic_victory": 24.3}, "avg_rounds": 11.2, "avg_oil": 130.7, "nuclear": 19.3, "usa_cas": 0.24, "iran_cas": 2.35, "recession": 0.11}, "85": {"outcomes": {"coalition_decisive_victory": 2.3, "coalition_limited_victory": 70.3, "iran_strategic_victory": 27.0, "negotiated_settlement": 0.3}, "avg_rounds": 11.2, "avg_oil": 136.3, "nuclear": 21.0, "usa_cas": 0.24, "iran_cas": 2.37, "recession": 0.16}, "95": {"outcomes": {"coalition_decisive_victory": 2.0, "coalition_limited_victory": 67.7, "iran_strategic_victory": 30.3}, "avg_rounds": 11.1, "avg_oil": 144.6, "nuclear": 21.3, "usa_cas": 0.24, "iran_cas": 2.32, "recession": 0.24}, "105": {"outcomes": {"coalition_decisive_victory": 2.0, "coalition_limited_victory": 66.3, "iran_strategic_victory": 31.7}, "avg_rounds": 11.0, "avg_oil": 154.6, "nuclear": 20.7, "usa_cas": 0.23, "iran_cas": 2.28, "recession": 0.35}, "115": {"outcomes": {"coalition_decisive_victory": 1.0, "coalition_limited_victory": 59.3, "iran_strategic_victory": 39.7}, "avg_rounds": 10.8, "avg_oil": 169.4, "nuclear": 19.3, "usa_cas": 0.23, "iran_cas": 2.28, "recession": 0.48}, "130": {"outcomes": {"coalition_decisive_victory": 0.7, "coalition_limited_victory": 41.0, "iran_strategic_victory": 58.3}, "avg_rounds": 10.0, "avg_oil": 197.5, "nuclear": 15.3, "usa_cas": 0.2, "iran_cas": 2.05, "recession": 0.66}}, "archetypes": {"Pyrrhic Victory": {"count": 230, "pct": 46.0, "example": {"rounds": 13, "oil": 146.3, "max_oil": 163.6, "iran_mil": 0, "usa_cas": 0.62, "iran_cas": 2.87, "nuclear": false}}, "Managed Degradation": {"count": 96, "pct": 19.2, "example": {"rounds": 10, "oil": 83.0, "max_oil": 86.8, "iran_mil": 0, "usa_cas": 0.23, "iran_cas": 2.2, "nuclear": false}}, "Quick US Withdrawal": {"count": 68, "pct": 13.6, "example": {"rounds": 3, "oil": 83.8, "max_oil": 87.7, "iran_mil": 49.9, "usa_cas": 0, "iran_cas": 0.3, "nuclear": false}}, "Hormuz Exhaustion": {"count": 62, "pct": 12.4, "example": {"rounds": 13, "oil": 168.1, "max_oil": 177.2, "iran_mil": 0, "usa_cas": 0.25, "iran_cas": 3.18, "nuclear": false}}, "Nuclear Shadow": {"count": 29, "pct": 5.8, "example": {"rounds": 11, "oil": 147.1, "max_oil": 147.1, "iran_mil": 0, "usa_cas": 0.37, "iran_cas": 2.5, "nuclear": true}}, "Other": {"count": 9, "pct": 1.8, "example": {"rounds": 15, "oil": 131.9, "max_oil": 137.9, "iran_mil": 0, "usa_cas": 0.3, "iran_cas": 3.75, "nuclear": true}}, "Attrition War": {"count": 5, "pct": 1.0, "example": {"rounds": 11, "oil": 125.9, "max_oil": 141.5, "iran_mil": 0, "usa_cas": 0.47, "iran_cas": 4.57, "nuclear": false}}, "Diplomatic Exit": {"count": 1, "pct": 0.2, "example": {"rounds": 18, "oil": 138.9, "max_oil": 161.0, "iran_mil": 0.0, "usa_cas": 0.4, "iran_cas": 2.97, "nuclear": true}}}, "whatif": {"Base Scenario": {"coalition_pct": 72.6, "iran_pct": 27.0, "other_pct": 0.4, "avg_rounds": 11.2, "avg_oil": 136.3, "nuclear": 21.0, "usa_cas": 0.24, "iran_cas": 2.37, "recession": 0.16}, "Rational Iran": {"coalition_pct": 80.7, "iran_pct": 19.3, "other_pct": -0.0, "avg_rounds": 11.5, "avg_oil": 136.3, "nuclear": 18.3, "usa_cas": 0.24, "iran_cas": 2.66, "recession": 0.16}, "Impatient Trump": {"coalition_pct": 68.7, "iran_pct": 31.0, "other_pct": 0.3, "avg_rounds": 10.7, "avg_oil": 131.7, "nuclear": 21.0, "usa_cas": 0.27, "iran_cas": 2.32, "recession": 0.13}, "Trump like Bush": {"coalition_pct": 80.3, "iran_pct": 19.7, "other_pct": 0.0, "avg_rounds": 11.8, "avg_oil": 139.6, "nuclear": 24.3, "usa_cas": 0.18, "iran_cas": 2.39, "recession": 0.19}, "Oil already $110": {"coalition_pct": 64.6, "iran_pct": 35.3, "other_pct": 0.1, "avg_rounds": 10.9, "avg_oil": 160.2, "nuclear": 20.0, "usa_cas": 0.24, "iran_cas": 2.3, "recession": 0.41}, "Nuclear sites 50% destroyed": {"coalition_pct": 73.7, "iran_pct": 26.0, "other_pct": 0.3, "avg_rounds": 11.0, "avg_oil": 136.3, "nuclear": 2.3, "usa_cas": 0.24, "iran_cas": 2.28, "recession": 0.17}, "No random shocks": {"coalition_pct": 82.0, "iran_pct": 17.7, "other_pct": 0.3, "avg_rounds": 11.4, "avg_oil": 136.7, "nuclear": 23.0, "usa_cas": 0.19, "iran_cas": 2.25, "recession": 0.17}}};
+const DATA = {"timelines": {"42": {"outcome": "coalition_limited_victory", "rounds": [{"round": 1, "date": "2026-03-01", "usa": "air_strikes", "iran": "proxy_escalation", "israel": "independent_ops", "hez": "calibrated", "oil": 87.2, "hormuz": 100, "iran_mil": 51.6, "usa_cas": 0, "iran_cas": 0.18, "israel_cas": 0.06, "usa_support": 52.7, "iran_support": 70, "recession_risk": 0.0, "iran_missiles": 67.7, "hez_missiles": 81.0, "shocks": []}, {"round": 2, "date": "2026-03-02", "usa": "standoff_only", "iran": "proxy_escalation", "israel": "joint_strikes", "hez": "calibrated", "oil": 85.3, "hormuz": 100, "iran_mil": 48.6, "usa_cas": 0, "iran_cas": 0.33, "israel_cas": 0.13, "usa_support": 49.3, "iran_support": 71.4, "recession_risk": 0.0, "iran_missiles": 64.7, "hez_missiles": 77.9, "shocks": []}, {"round": 3, "date": "2026-03-03", "usa": "standoff_only", "iran": "proxy_escalation", "israel": "independent_ops", "hez": "calibrated", "oil": 84.1, "hormuz": 100, "iran_mil": 43.4, "usa_cas": 0, "iran_cas": 0.42, "israel_cas": 0.17, "usa_support": 47.2, "iran_support": 72.2, "recession_risk": 0.0, "iran_missiles": 61.2, "hez_missiles": 71.4, "shocks": []}, {"round": 4, "date": "2026-03-04", "usa": "standoff_only", "iran": "retaliate", "israel": "joint_strikes", "hez": "full_barrage", "oil": 83.8, "hormuz": 100, "iran_mil": 36.3, "usa_cas": 0.01, "iran_cas": 0.63, "israel_cas": 0.33, "usa_support": 46.3, "iran_support": 74.8, "recession_risk": 0.0, "iran_missiles": 56.4, "hez_missiles": 58.7, "shocks": []}, {"round": 5, "date": "2026-03-05", "usa": "standoff_only", "iran": "proxy_escalation", "israel": "defensive_posture", "hez": "calibrated", "oil": 83.5, "hormuz": 100, "iran_mil": 33.4, "usa_cas": 0.01, "iran_cas": 0.84, "israel_cas": 0.35, "usa_support": 42.2, "iran_support": 77.0, "recession_risk": 0.0, "iran_missiles": 53.1, "hez_missiles": 52.1, "shocks": []}, {"round": 6, "date": "2026-03-06", "usa": "ground_operation", "iran": "attrition", "israel": "defensive_posture", "hez": "calibrated", "oil": 83.2, "hormuz": 100, "iran_mil": 19.6, "usa_cas": 0.1, "iran_cas": 1.45, "israel_cas": 0.36, "usa_support": 37.9, "iran_support": 79.7, "recession_risk": 0.0, "iran_missiles": 53.1, "hez_missiles": 46.7, "shocks": []}, {"round": 7, "date": "2026-03-07", "usa": "standoff_only", "iran": "hormuz_blockade", "israel": "defensive_posture", "hez": "full_barrage", "oil": 122.6, "hormuz": 62.1, "iran_mil": 15.0, "usa_cas": 0.1, "iran_cas": 1.59, "israel_cas": 0.44, "usa_support": 37.9, "iran_support": 81.1, "recession_risk": 0.0, "iran_missiles": 50.3, "hez_missiles": 36.5, "shocks": []}, {"round": 8, "date": "2026-03-10", "usa": "air_strikes", "iran": "hormuz_blockade", "israel": "joint_strikes", "hez": "ceasefire", "oil": 161.0, "hormuz": 56.1, "iran_mil": 7.2, "usa_cas": 0.15, "iran_cas": 2.25, "israel_cas": 0.44, "usa_support": 40.9, "iran_support": 82.3, "recession_risk": 0.0, "iran_missiles": 46.4, "hez_missiles": 36.5, "shocks": ["iraqi_militia_attacks_us_base:A"]}, {"round": 9, "date": "2026-03-13", "usa": "air_strikes", "iran": "hormuz_blockade", "israel": "joint_strikes", "hez": "calibrated", "oil": 186.8, "hormuz": 45.7, "iran_mil": 0, "usa_cas": 0.15, "iran_cas": 2.46, "israel_cas": 0.45, "usa_support": 40.9, "iran_support": 88.0, "recession_risk": 0.0, "iran_missiles": 42.8, "hez_missiles": 31.4, "shocks": []}, {"round": 10, "date": "2026-03-16", "usa": "declare_victory", "iran": "proxy_escalation", "israel": "defensive_posture", "hez": "calibrated", "oil": 191.4, "hormuz": 47.3, "iran_mil": 0.0, "usa_cas": 0.15, "iran_cas": 2.46, "israel_cas": 0.47, "usa_support": 41.6, "iran_support": 86.3, "recession_risk": 0.16, "iran_missiles": 39.2, "hez_missiles": 25.7, "shocks": []}]}, "1": {"outcome": "coalition_limited_victory", "rounds": [{"round": 1, "date": "2026-03-01", "usa": "standoff_only", "iran": "proxy_escalation", "israel": "independent_ops", "hez": "calibrated", "oil": 86.8, "hormuz": 100, "iran_mil": 53.6, "usa_cas": 0, "iran_cas": 0.19, "israel_cas": 0.07, "usa_support": 50.9, "iran_support": 70, "recession_risk": 0.0, "iran_missiles": 66.0, "hez_missiles": 80.8, "shocks": []}, {"round": 2, "date": "2026-03-02", "usa": "standoff_only", "iran": "proxy_escalation", "israel": "independent_ops", "hez": "calibrated", "oil": 85.0, "hormuz": 100, "iran_mil": 46.6, "usa_cas": 0, "iran_cas": 0.38, "israel_cas": 0.08, "usa_support": 47.4, "iran_support": 72.6, "recession_risk": 0.0, "iran_missiles": 63.7, "hez_missiles": 77.7, "shocks": []}, {"round": 3, "date": "2026-03-03", "usa": "standoff_only", "iran": "proxy_escalation", "israel": "defensive_posture", "hez": "calibrated", "oil": 83.6, "hormuz": 100, "iran_mil": 44.7, "usa_cas": 0, "iran_cas": 0.47, "israel_cas": 0.08, "usa_support": 45.6, "iran_support": 75.1, "recession_risk": 0.0, "iran_missiles": 61.2, "hez_missiles": 73.2, "shocks": []}, {"round": 4, "date": "2026-03-04", "usa": "standoff_only", "iran": "proxy_escalation", "israel": "independent_ops", "hez": "calibrated", "oil": 83.3, "hormuz": 100, "iran_mil": 40.1, "usa_cas": 0, "iran_cas": 0.56, "israel_cas": 0.11, "usa_support": 42.9, "iran_support": 77.3, "recession_risk": 0.0, "iran_missiles": 58.9, "hez_missiles": 68.9, "shocks": []}, {"round": 5, "date": "2026-03-05", "usa": "standoff_only", "iran": "proxy_escalation", "israel": "independent_ops", "hez": "calibrated", "oil": 83.1, "hormuz": 100, "iran_mil": 32.0, "usa_cas": 0, "iran_cas": 0.64, "israel_cas": 0.11, "usa_support": 40.7, "iran_support": 78.9, "recession_risk": 0.0, "iran_missiles": 55.9, "hez_missiles": 62.8, "shocks": []}, {"round": 6, "date": "2026-03-06", "usa": "standoff_only", "iran": "attrition", "israel": "joint_strikes", "hez": "hold_fire", "oil": 83.1, "hormuz": 100, "iran_mil": 24.8, "usa_cas": 0, "iran_cas": 0.98, "israel_cas": 0.11, "usa_support": 40.7, "iran_support": 81.3, "recession_risk": 0.0, "iran_missiles": 55.9, "hez_missiles": 62.8, "shocks": []}, {"round": 7, "date": "2026-03-07", "usa": "ground_operation", "iran": "attrition", "israel": "independent_ops", "hez": "calibrated", "oil": 83.1, "hormuz": 100, "iran_mil": 7.6, "usa_cas": 0.23, "iran_cas": 1.95, "israel_cas": 0.2, "usa_support": 34.5, "iran_support": 85.9, "recession_risk": 0.0, "iran_missiles": 55.9, "hez_missiles": 57.7, "shocks": []}, {"round": 8, "date": "2026-03-10", "usa": "standoff_only", "iran": "proxy_escalation", "israel": "joint_strikes", "hez": "calibrated", "oil": 83.1, "hormuz": 100, "iran_mil": 3.9, "usa_cas": 0.23, "iran_cas": 2.11, "israel_cas": 0.25, "usa_support": 31.3, "iran_support": 87.0, "recession_risk": 0.0, "iran_missiles": 52.2, "hez_missiles": 52.5, "shocks": []}, {"round": 9, "date": "2026-03-13", "usa": "standoff_only", "iran": "proxy_escalation", "israel": "joint_strikes", "hez": "calibrated", "oil": 83.1, "hormuz": 100, "iran_mil": 0, "usa_cas": 0.23, "iran_cas": 2.2, "israel_cas": 0.29, "usa_support": 28.0, "iran_support": 91.5, "recession_risk": 0.0, "iran_missiles": 47.9, "hez_missiles": 47.0, "shocks": []}, {"round": 10, "date": "2026-03-16", "usa": "declare_victory", "iran": "proxy_escalation", "israel": "push_for_talks", "hez": "calibrated", "oil": 83.0, "hormuz": 100, "iran_mil": 0, "usa_cas": 0.23, "iran_cas": 2.2, "israel_cas": 0.36, "usa_support": 28.4, "iran_support": 90.8, "recession_risk": 0.0, "iran_missiles": 44.4, "hez_missiles": 43.3, "shocks": []}], "seed": 1}, "15": {"outcome": "iran_strategic_victory", "rounds": [{"round": 1, "date": "2026-03-01", "usa": "standoff_only", "iran": "retaliate", "israel": "defensive_posture", "hez": "calibrated", "oil": 87.9, "hormuz": 100, "iran_mil": 56.0, "usa_cas": 0.05, "iran_cas": 0.14, "israel_cas": 0.05, "usa_support": 54.2, "iran_support": 70, "recession_risk": 0.0, "iran_missiles": 66.1, "hez_missiles": 78.8, "shocks": []}, {"round": 2, "date": "2026-03-02", "usa": "standoff_only", "iran": "proxy_escalation", "israel": "defensive_posture", "hez": "calibrated", "oil": 85.5, "hormuz": 100, "iran_mil": 53.7, "usa_cas": 0.05, "iran_cas": 0.3, "israel_cas": 0.06, "usa_support": 50.5, "iran_support": 72.6, "recession_risk": 0.0, "iran_missiles": 63.8, "hez_missiles": 73.8, "shocks": []}, {"round": 3, "date": "2026-03-03", "usa": "standoff_only", "iran": "proxy_escalation", "israel": "independent_ops", "hez": "calibrated", "oil": 84.0, "hormuz": 100, "iran_mil": 47.4, "usa_cas": 0.05, "iran_cas": 0.43, "israel_cas": 0.07, "usa_support": 47.0, "iran_support": 74.2, "recession_risk": 0.0, "iran_missiles": 61.0, "hez_missiles": 70.5, "shocks": []}, {"round": 4, "date": "2026-03-04", "usa": "standoff_only", "iran": "proxy_escalation", "israel": "joint_strikes", "hez": "calibrated", "oil": 83.5, "hormuz": 100, "iran_mil": 44.3, "usa_cas": 0.05, "iran_cas": 0.58, "israel_cas": 0.09, "usa_support": 44.4, "iran_support": 76.6, "recession_risk": 0.0, "iran_missiles": 57.6, "hez_missiles": 65.4, "shocks": []}, {"round": 5, "date": "2026-03-05", "usa": "declare_victory", "iran": "retaliate", "israel": "defensive_posture", "hez": "calibrated", "oil": 83.4, "hormuz": 100, "iran_mil": 41.6, "usa_cas": 0.1, "iran_cas": 0.58, "israel_cas": 0.16, "usa_support": 47.3, "iran_support": 78.5, "recession_risk": 0.0, "iran_missiles": 52.2, "hez_missiles": 60.5, "shocks": []}, {"round": 6, "date": "2026-03-06", "usa": "declare_victory", "iran": "proxy_escalation", "israel": "push_for_talks", "hez": "calibrated", "oil": 83.3, "hormuz": 100, "iran_mil": 41.6, "usa_cas": 0.1, "iran_cas": 0.58, "israel_cas": 0.18, "usa_support": 47.4, "iran_support": 78.5, "recession_risk": 0.0, "iran_missiles": 48.6, "hez_missiles": 57.2, "shocks": []}, {"round": 7, "date": "2026-03-07", "usa": "standoff_only", "iran": "retaliate", "israel": "joint_strikes", "hez": "full_barrage", "oil": 83.2, "hormuz": 100, "iran_mil": 33.6, "usa_cas": 0.13, "iran_cas": 0.69, "israel_cas": 0.42, "usa_support": 46.4, "iran_support": 78.5, "recession_risk": 0.0, "iran_missiles": 40.5, "hez_missiles": 48.2, "shocks": []}, {"round": 8, "date": "2026-03-10", "usa": "standoff_only", "iran": "attrition", "israel": "joint_strikes", "hez": "calibrated", "oil": 83.1, "hormuz": 100, "iran_mil": 27.2, "usa_cas": 0.13, "iran_cas": 0.95, "israel_cas": 0.47, "usa_support": 46.4, "iran_support": 81.3, "recession_risk": 0.0, "iran_missiles": 40.5, "hez_missiles": 43.9, "shocks": []}, {"round": 9, "date": "2026-03-13", "usa": "ground_operation", "iran": "hormuz_blockade", "israel": "joint_strikes", "hez": "full_barrage", "oil": 147.3, "hormuz": 57.3, "iran_mil": 12.2, "usa_cas": 0.29, "iran_cas": 2.11, "israel_cas": 0.67, "usa_support": 39.5, "iran_support": 89.3, "recession_risk": 0.0, "iran_missiles": 36.7, "hez_missiles": 32.7, "shocks": []}, {"round": 10, "date": "2026-03-16", "usa": "ground_operation", "iran": "retaliate", "israel": "joint_strikes", "hez": "hold_fire", "oil": 152.0, "hormuz": 59.6, "iran_mil": 0, "usa_cas": 0.56, "iran_cas": 3.3, "israel_cas": 0.67, "usa_support": 34.6, "iran_support": 89.2, "recession_risk": 0.0, "iran_missiles": 28.7, "hez_missiles": 32.7, "shocks": []}, {"round": 11, "date": "2026-03-19", "usa": "negotiate", "iran": "proxy_escalation", "israel": "defensive_posture", "hez": "hold_fire", "oil": 147.8, "hormuz": 62.6, "iran_mil": 0, "usa_cas": 0.56, "iran_cas": 3.3, "israel_cas": 0.67, "usa_support": 29.3, "iran_support": 88.5, "recession_risk": 0.0, "iran_missiles": 25.4, "hez_missiles": 32.7, "shocks": []}, {"round": 12, "date": "2026-03-22", "usa": "standoff_only", "iran": "attrition", "israel": "independent_ops", "hez": "calibrated", "oil": 145.3, "hormuz": 63.9, "iran_mil": 0, "usa_cas": 0.56, "iran_cas": 3.62, "israel_cas": 0.72, "usa_support": 29.3, "iran_support": 90.4, "recession_risk": 0.06, "iran_missiles": 25.4, "hez_missiles": 27.4, "shocks": []}, {"round": 13, "date": "2026-03-25", "usa": "standoff_only", "iran": "proxy_escalation", "israel": "independent_ops", "hez": "calibrated", "oil": 138.3, "hormuz": 65.7, "iran_mil": 0, "usa_cas": 0.56, "iran_cas": 3.7, "israel_cas": 0.74, "usa_support": 26.9, "iran_support": 89.0, "recession_risk": 0.12, "iran_missiles": 22.6, "hez_missiles": 21.6, "shocks": []}, {"round": 14, "date": "2026-03-28", "usa": "standoff_only", "iran": "proxy_escalation", "israel": "independent_ops", "hez": "calibrated", "oil": 131.7, "hormuz": 68.7, "iran_mil": 0, "usa_cas": 0.56, "iran_cas": 3.83, "israel_cas": 0.76, "usa_support": 22.8, "iran_support": 88.6, "recession_risk": 0.16, "iran_missiles": 19.9, "hez_missiles": 17.0, "shocks": []}, {"round": 15, "date": "2026-04-04", "usa": "standoff_only", "iran": "proxy_escalation", "israel": "independent_ops", "hez": "ceasefire", "oil": 128.9, "hormuz": 70.2, "iran_mil": 0, "usa_cas": 0.61, "iran_cas": 4.0, "israel_cas": 0.76, "usa_support": 14.0, "iran_support": 85.8, "recession_risk": 0.19, "iran_missiles": 16.1, "hez_missiles": 17.0, "shocks": ["iraqi_militia_attacks_us_base:B"]}], "seed": 15}, "100": {"outcome": "iran_strategic_victory", "rounds": [{"round": 1, "date": "2026-03-01", "usa": "air_strikes", "iran": "proxy_escalation", "israel": "joint_strikes", "hez": "calibrated", "oil": 87.9, "hormuz": 100, "iran_mil": 50.9, "usa_cas": 0, "iran_cas": 0.21, "israel_cas": 0.04, "usa_support": 51.7, "iran_support": 70, "recession_risk": 0.0, "iran_missiles": 66.0, "hez_missiles": 80.5, "shocks": []}, {"round": 2, "date": "2026-03-02", "usa": "declare_victory", "iran": "proxy_escalation", "israel": "defensive_posture", "hez": "calibrated", "oil": 84.8, "hormuz": 100, "iran_mil": 50.9, "usa_cas": 0, "iran_cas": 0.21, "israel_cas": 0.1, "usa_support": 52.2, "iran_support": 73.0, "recession_risk": 0.0, "iran_missiles": 63.3, "hez_missiles": 74.2, "shocks": []}], "seed": 100}}, "sensitivity_usa_patience": {"0.7": {"outcomes": {"coalition_decisive_victory": 1.3, "coalition_limited_victory": 66.0, "iran_strategic_victory": 32.7}, "avg_rounds": 10.2, "avg_oil": 130.4, "nuclear": 17.3, "usa_cas": 0.29, "iran_cas": 2.28, "recession": 0.12}, "0.75": {"outcomes": {"coalition_decisive_victory": 1.7, "coalition_limited_victory": 67.0, "iran_strategic_victory": 31.0, "negotiated_settlement": 0.3}, "avg_rounds": 10.7, "avg_oil": 131.7, "nuclear": 21.0, "usa_cas": 0.27, "iran_cas": 2.32, "recession": 0.13}, "0.78": {"outcomes": {"coalition_decisive_victory": 3.0, "coalition_limited_victory": 67.7, "iran_strategic_victory": 29.0, "negotiated_settlement": 0.3}, "avg_rounds": 10.9, "avg_oil": 134.4, "nuclear": 22.7, "usa_cas": 0.27, "iran_cas": 2.37, "recession": 0.14}, "0.82": {"outcomes": {"coalition_decisive_victory": 2.3, "coalition_limited_victory": 70.3, "iran_strategic_victory": 27.0, "negotiated_settlement": 0.3}, "avg_rounds": 11.2, "avg_oil": 136.3, "nuclear": 21.0, "usa_cas": 0.24, "iran_cas": 2.37, "recession": 0.16}, "0.85": {"outcomes": {"coalition_decisive_victory": 3.0, "coalition_limited_victory": 72.7, "iran_strategic_victory": 24.0, "negotiated_settlement": 0.3}, "avg_rounds": 11.5, "avg_oil": 137.7, "nuclear": 22.3, "usa_cas": 0.21, "iran_cas": 2.38, "recession": 0.18}, "0.88": {"outcomes": {"coalition_decisive_victory": 1.7, "coalition_limited_victory": 74.7, "iran_strategic_victory": 23.7}, "avg_rounds": 11.5, "avg_oil": 138.5, "nuclear": 23.0, "usa_cas": 0.2, "iran_cas": 2.38, "recession": 0.18}, "0.93": {"outcomes": {"coalition_decisive_victory": 3.7, "coalition_limited_victory": 77.3, "iran_strategic_victory": 19.0}, "avg_rounds": 11.9, "avg_oil": 139.2, "nuclear": 22.3, "usa_cas": 0.15, "iran_cas": 2.39, "recession": 0.18}}, "sensitivity_oil": {"75": {"outcomes": {"coalition_decisive_victory": 3.7, "coalition_limited_victory": 72.0, "iran_strategic_victory": 24.3}, "avg_rounds": 11.2, "avg_oil": 130.7, "nuclear": 19.3, "usa_cas": 0.24, "iran_cas": 2.35, "recession": 0.11}, "85": {"outcomes": {"coalition_decisive_victory": 2.3, "coalition_limited_victory": 70.3, "iran_strategic_victory": 27.0, "negotiated_settlement": 0.3}, "avg_rounds": 11.2, "avg_oil": 136.3, "nuclear": 21.0, "usa_cas": 0.24, "iran_cas": 2.37, "recession": 0.16}, "95": {"outcomes": {"coalition_decisive_victory": 2.0, "coalition_limited_victory": 67.7, "iran_strategic_victory": 30.3}, "avg_rounds": 11.1, "avg_oil": 144.6, "nuclear": 21.3, "usa_cas": 0.24, "iran_cas": 2.32, "recession": 0.24}, "105": {"outcomes": {"coalition_decisive_victory": 2.0, "coalition_limited_victory": 66.3, "iran_strategic_victory": 31.7}, "avg_rounds": 11.0, "avg_oil": 154.6, "nuclear": 20.7, "usa_cas": 0.23, "iran_cas": 2.28, "recession": 0.35}, "115": {"outcomes": {"coalition_decisive_victory": 1.0, "coalition_limited_victory": 59.3, "iran_strategic_victory": 39.7}, "avg_rounds": 10.8, "avg_oil": 169.4, "nuclear": 19.3, "usa_cas": 0.23, "iran_cas": 2.28, "recession": 0.48}, "130": {"outcomes": {"coalition_decisive_victory": 0.7, "coalition_limited_victory": 41.0, "iran_strategic_victory": 58.3}, "avg_rounds": 10.0, "avg_oil": 197.5, "nuclear": 15.3, "usa_cas": 0.2, "iran_cas": 2.05, "recession": 0.66}}, "archetypes": {"Pyrrhic Victory": {"count": 230, "pct": 46.0, "example": {"rounds": 13, "oil": 146.3, "max_oil": 163.6, "iran_mil": 0, "usa_cas": 0.62, "iran_cas": 2.87, "nuclear": false}}, "Managed Degradation": {"count": 96, "pct": 19.2, "example": {"rounds": 10, "oil": 83.0, "max_oil": 86.8, "iran_mil": 0, "usa_cas": 0.23, "iran_cas": 2.2, "nuclear": false}}, "Quick US Withdrawal": {"count": 68, "pct": 13.6, "example": {"rounds": 3, "oil": 83.8, "max_oil": 87.7, "iran_mil": 49.9, "usa_cas": 0, "iran_cas": 0.3, "nuclear": false}}, "Hormuz Exhaustion": {"count": 62, "pct": 12.4, "example": {"rounds": 13, "oil": 168.1, "max_oil": 177.2, "iran_mil": 0, "usa_cas": 0.25, "iran_cas": 3.18, "nuclear": false}}, "Nuclear Shadow": {"count": 29, "pct": 5.8, "example": {"rounds": 11, "oil": 147.1, "max_oil": 147.1, "iran_mil": 0, "usa_cas": 0.37, "iran_cas": 2.5, "nuclear": true}}, "Other": {"count": 9, "pct": 1.8, "example": {"rounds": 15, "oil": 131.9, "max_oil": 137.9, "iran_mil": 0, "usa_cas": 0.3, "iran_cas": 3.75, "nuclear": true}}, "Attrition War": {"count": 5, "pct": 1.0, "example": {"rounds": 11, "oil": 125.9, "max_oil": 141.5, "iran_mil": 0, "usa_cas": 0.47, "iran_cas": 4.57, "nuclear": false}}, "Diplomatic Exit": {"count": 1, "pct": 0.2, "example": {"rounds": 18, "oil": 138.9, "max_oil": 161.0, "iran_mil": 0.0, "usa_cas": 0.4, "iran_cas": 2.97, "nuclear": true}}}, "whatif": {"Base Scenario": {"coalition_pct": 72.6, "iran_pct": 27.0, "other_pct": 0.4, "avg_rounds": 11.2, "avg_oil": 136.3, "nuclear": 21.0, "usa_cas": 0.24, "iran_cas": 2.37, "recession": 0.16}, "Rational Iran": {"coalition_pct": 80.7, "iran_pct": 19.3, "other_pct": -0.0, "avg_rounds": 11.5, "avg_oil": 136.3, "nuclear": 18.3, "usa_cas": 0.24, "iran_cas": 2.66, "recession": 0.16}, "Impatient Trump": {"coalition_pct": 68.7, "iran_pct": 31.0, "other_pct": 0.3, "avg_rounds": 10.7, "avg_oil": 131.7, "nuclear": 21.0, "usa_cas": 0.27, "iran_cas": 2.32, "recession": 0.13}, "Trump like Bush": {"coalition_pct": 80.3, "iran_pct": 19.7, "other_pct": 0.0, "avg_rounds": 11.8, "avg_oil": 139.6, "nuclear": 24.3, "usa_cas": 0.18, "iran_cas": 2.39, "recession": 0.19}, "Oil already $110": {"coalition_pct": 64.6, "iran_pct": 35.3, "other_pct": 0.1, "avg_rounds": 10.9, "avg_oil": 160.2, "nuclear": 20.0, "usa_cas": 0.24, "iran_cas": 2.3, "recession": 0.41}, "Nuclear sites 50% destroyed": {"coalition_pct": 73.7, "iran_pct": 26.0, "other_pct": 0.3, "avg_rounds": 11.0, "avg_oil": 136.3, "nuclear": 2.3, "usa_cas": 0.24, "iran_cas": 2.28, "recession": 0.17}, "No random shocks": {"coalition_pct": 82.0, "iran_pct": 17.7, "other_pct": 0.3, "avg_rounds": 11.4, "avg_oil": 136.7, "nuclear": 23.0, "usa_cas": 0.19, "iran_cas": 2.25, "recession": 0.17}}};
 
 // ============================================================
 // HELPERS
@@ -736,74 +782,127 @@ function renderArchetypes() {
 }
 
 // ============================================================
-// 3. TIMELINE (narrative)
+// 3. TIMELINE (narrative with switcher)
 // ============================================================
-function renderTimeline() {
-  const rounds = DATA.timeline.rounds;
+const stratColors = {
+  air_strikes: '#c25450', standoff_only: '#7986cb', ground_operation: '#a33a38',
+  declare_victory: '#5a9a6b', proxy_escalation: '#c9a855', retaliate: '#c25450',
+  attrition: '#c97843', hormuz_blockade: '#a870c4', independent_ops: '#5a8abf',
+  joint_strikes: '#4a9aa0', defensive_posture: '#6b7585', calibrated: '#c9893a',
+  full_barrage: '#a33a38', ceasefire: '#5a9a6b', negotiate: '#8eaadc',
+  push_for_talks: '#8eaadc', hold_fire: '#6b7585'
+};
+const stratLabels = {
+  air_strikes: 'Air Strikes', standoff_only: 'Standoff Only', ground_operation: 'Ground Op',
+  declare_victory: 'Declare Victory', proxy_escalation: 'Proxy Escalation', retaliate: 'Retaliate',
+  attrition: 'Attrition', hormuz_blockade: 'Hormuz Blockade', independent_ops: 'Independent Ops',
+  joint_strikes: 'Joint Strikes', defensive_posture: 'Defensive', calibrated: 'Calibrated Strikes',
+  full_barrage: 'Full Barrage', ceasefire: 'Ceasefire', negotiate: 'Negotiate',
+  push_for_talks: 'Push for Talks', hold_fire: 'Hold Fire'
+};
+const timelineDescriptions = {
+  '42': { label: '#42: Pyrrhic Victory', short: 'Hormuz blockade, oil to $191, coalition wins at huge cost' },
+  '1': { label: '#1: Clean Win', short: 'Managed degradation — oil stays $83, no Hormuz blockade' },
+  '15': { label: '#15: Iran Wins', short: 'US support collapses after 15 rounds, Iran outlasts coalition' },
+  '100': { label: '#100: Instant Exit', short: 'US declares victory after 2 rounds and leaves' },
+};
+const outcomeLabels = {
+  coalition_limited_victory: { text: 'Coalition Limited Victory', color: 'var(--coalition)' },
+  coalition_decisive_victory: { text: 'Coalition Decisive Victory', color: 'var(--coalition)' },
+  iran_strategic_victory: { text: 'Iran Strategic Victory', color: 'var(--iran)' },
+  negotiated_settlement: { text: 'Negotiated Settlement', color: 'var(--other)' },
+};
+let currentTimeline = '42';
+
+function renderTimelineSwitcher() {
+  const sw = el('tl-switcher');
+  let html = '';
+  for (const [seed, info] of Object.entries(timelineDescriptions)) {
+    html += `<button class="tl-btn ${seed === currentTimeline ? 'active' : ''}" data-seed="${seed}" title="${info.short}">${info.label}</button>`;
+  }
+  sw.innerHTML = html;
+  sw.querySelectorAll('.tl-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentTimeline = btn.dataset.seed;
+      renderTimelineSwitcher();
+      renderTimelineContent();
+    });
+  });
+}
+
+function renderTimelineContent() {
+  const tl = DATA.timelines[currentTimeline];
+  const rounds = tl.rounds;
   const container = el('timeline-narrative');
 
-  const stratColors = {
-    air_strikes: '#c25450', standoff_only: '#7986cb', ground_operation: '#a33a38',
-    declare_victory: '#5a9a6b', proxy_escalation: '#c9a855', retaliate: '#c25450',
-    attrition: '#c97843', hormuz_blockade: '#a870c4', independent_ops: '#5a8abf',
-    joint_strikes: '#4a9aa0', defensive_posture: '#6b7585', calibrated: '#c9893a',
-    full_barrage: '#a33a38', ceasefire: '#5a9a6b'
-  };
+  const oc = outcomeLabels[tl.outcome] || { text: tl.outcome, color: 'var(--dim)' };
+  const tag = el('tl-outcome-tag');
+  tag.textContent = `${oc.text} · ${rounds.length} rounds · Final oil $${rounds[rounds.length-1].oil.toFixed(0)}`;
+  tag.style.background = oc.color; tag.style.color = '#fff';
 
-  const stratLabels = {
-    air_strikes: 'Air Strikes', standoff_only: 'Standoff Only', ground_operation: 'Ground Operation',
-    declare_victory: 'Declare Victory', proxy_escalation: 'Proxy Escalation', retaliate: 'Retaliate',
-    attrition: 'Attrition', hormuz_blockade: 'Hormuz Blockade', independent_ops: 'Independent Ops',
-    joint_strikes: 'Joint Strikes', defensive_posture: 'Defensive', calibrated: 'Calibrated Strikes',
-    full_barrage: 'Full Barrage', ceasefire: 'Ceasefire'
-  };
+  // Auto-detect key rounds
+  const keyRounds = new Set([1, rounds.length]);
+  for (let i = 1; i < rounds.length; i++) {
+    const r = rounds[i], prev = rounds[i-1];
+    if (r.shocks && r.shocks.length > 0) keyRounds.add(r.round);
+    if (r.oil - prev.oil > 20) keyRounds.add(r.round);
+    if (r.usa !== prev.usa && ['ground_operation','declare_victory','negotiate'].includes(r.usa)) keyRounds.add(r.round);
+    if (r.iran !== prev.iran && ['hormuz_blockade','retaliate'].includes(r.iran)) keyRounds.add(r.round);
+    if (prev.iran_mil > 0 && r.iran_mil === 0) keyRounds.add(r.round);
+  }
 
-  // Annotate key turning points
-  const annotations = {
-    1: 'War begins. US opens with air strikes, Iran responds through proxies.',
-    4: 'Iran retaliates directly. Hezbollah launches full barrage on Israel.',
-    6: 'US commits ground forces — Iran\'s military drops from 33% to 20%.',
-    7: 'Turning point: Iran blocks the Strait of Hormuz. Oil jumps to $123.',
-    8: 'Oil hits $161. Iraqi militias attack US base. Hezbollah signals ceasefire.',
-    9: 'Oil at $187. Iran\'s conventional military destroyed, but Hormuz still blocked.',
-    10: 'US declares victory and begins withdrawal. Oil at $191.'
-  };
-
-  const keyRounds = new Set([1, 4, 6, 7, 8, 10]);
+  function annotate(r, i) {
+    const parts = [];
+    if (r.round === 1) parts.push('War begins.');
+    if (i > 0) {
+      const prev = rounds[i-1];
+      if (r.usa !== prev.usa) {
+        if (r.usa === 'ground_operation') parts.push('US commits ground forces.');
+        else if (r.usa === 'declare_victory') parts.push('US declares victory.');
+        else if (r.usa === 'negotiate') parts.push('US opens negotiations.');
+      }
+      if (r.iran !== prev.iran) {
+        if (r.iran === 'hormuz_blockade') parts.push(`Iran blocks Hormuz — oil to $${r.oil.toFixed(0)}.`);
+        else if (r.iran === 'retaliate') parts.push('Iran retaliates directly.');
+      }
+      if (r.hez !== prev.hez) {
+        if (r.hez === 'full_barrage') parts.push('Hezbollah launches full barrage.');
+        else if (r.hez === 'ceasefire' || r.hez === 'hold_fire') parts.push('Hezbollah signals ceasefire.');
+      }
+      if (prev.iran_mil > 0 && r.iran_mil === 0) parts.push("Iran's military destroyed.");
+      if (r.oil - prev.oil > 30) parts.push(`Oil spikes to $${r.oil.toFixed(0)}.`);
+    }
+    if (r.round === rounds.length && !parts.some(p => p.includes('declares'))) {
+      parts.push(tl.outcome.includes('coalition') ? 'Coalition claims victory.' : 'Iran outlasts the coalition.');
+    }
+    return parts.join(' ');
+  }
 
   let html = '';
-  for (const r of rounds) {
+  for (let i = 0; i < rounds.length; i++) {
+    const r = rounds[i];
     const isKey = keyRounds.has(r.round);
-    html += `<div class="tl-step ${isKey ? 'tl-key' : ''}">`;
-    html += `<div class="tl-dot"></div>`;
-    html += `<div class="tl-round">Round ${r.round}</div>`;
-    html += `<div class="tl-actions">`;
-    const players = [
-      { key: 'usa', label: 'US' }, { key: 'iran', label: 'Iran' },
-      { key: 'israel', label: 'Israel' }, { key: 'hez', label: 'Hez' }
-    ];
-    for (const p of players) {
+    const note = annotate(r, i);
+    html += `<div class="tl-step ${isKey ? 'tl-key' : ''}"><div class="tl-dot"></div>`;
+    html += `<div class="tl-round">Round ${r.round}</div><div class="tl-actions">`;
+    for (const p of [{key:'usa',label:'US'},{key:'iran',label:'Iran'},{key:'israel',label:'Israel'},{key:'hez',label:'Hez'}]) {
       const strat = r[p.key];
-      const color = stratColors[strat] || '#6b7585';
-      html += `<span class="tl-tag" style="background:${color}">${p.label}: ${stratLabels[strat] || strat}</span>`;
+      html += `<span class="tl-tag" style="background:${stratColors[strat]||'#6b7585'}">${p.label}: ${stratLabels[strat]||strat}</span>`;
     }
     html += `</div>`;
-    if (annotations[r.round]) {
-      html += `<div class="tl-note">${annotations[r.round]}</div>`;
-    }
-    if (r.shocks && r.shocks.length > 0) {
-      html += `<div class="tl-shock">Shock: ${r.shocks.map(s => s.split(':')[0].replace(/_/g, ' ')).join(', ')}</div>`;
-    }
-    html += `<div class="tl-metrics-inline">Oil $${r.oil.toFixed(0)} · Iran military ${r.iran_mil.toFixed(0)}% · Hormuz ${r.hormuz.toFixed(0)}%</div>`;
-    html += `</div>`;
+    if (note) html += `<div class="tl-note">${note}</div>`;
+    if (r.shocks && r.shocks.length > 0) html += `<div class="tl-shock">Shock: ${r.shocks.map(s => s.split(':')[0].replace(/_/g,' ')).join(', ')}</div>`;
+    html += `<div class="tl-metrics-inline">Oil $${r.oil.toFixed(0)} · Iran military ${r.iran_mil.toFixed(0)}% · Hormuz ${r.hormuz.toFixed(0)}%</div></div>`;
   }
   container.innerHTML = html;
 
-  // Metric tracks
-  renderMetricTrack('metric-oil', 'Oil Price $', rounds.map(r => r.oil), 60, 200, 'var(--oil)');
+  const maxOil = Math.max(200, ...rounds.map(r => r.oil));
+  renderMetricTrack('metric-oil', 'Oil Price $', rounds.map(r => r.oil), 60, maxOil, 'var(--oil)');
   renderMetricTrack('metric-iran-mil', 'Iran Military', rounds.map(r => r.iran_mil), 0, 65, 'var(--iran)');
   renderMetricTrack('metric-recession', 'Recession Risk', rounds.map(r => r.recession_risk), 0, 0.5, 'var(--recession)');
 }
+
+function renderTimeline() { renderTimelineSwitcher(); renderTimelineContent(); }
 
 function renderMetricTrack(containerId, label, values, min, max, color) {
   const wrapper = el(containerId);
