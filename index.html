@@ -1,57 +1,63 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>USA vs Iran: Game Theory Conflict Model</title>
 <style>
 :root {
-  --bg: #0f1117;
-  --card: #1a1d27;
-  --border: #2a2d3a;
-  --text: #e0e0e0;
-  --dim: #8892a4;
-  --accent: #4fc3f7;
-  --coalition: #4caf50;
-  --iran: #f44336;
-  --other: #ffb74d;
-  --oil: #ff9800;
-  --nuclear: #e040fb;
-  --recession: #ef5350;
+  --bg: #191a1f;
+  --card: #222329;
+  --border: #333540;
+  --text: #d4d4d8;
+  --dim: #8b8d98;
+  --accent: #8eaadc;
+  --coalition: #5a9a6b;
+  --iran: #c25450;
+  --other: #c9a855;
+  --oil: #c9893a;
+  --nuclear: #a870c4;
+  --recession: #c25450;
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Charter', 'Bitstream Charter', 'Georgia', 'Cambria', serif;
   background: var(--bg);
   color: var(--text);
-  line-height: 1.6;
+  line-height: 1.7;
   padding: 0;
+  font-size: 16px;
+}
+h1, h2, h3, .kpi .value, .how-card .num, .slider-val {
+  font-family: 'Inter', 'Helvetica Neue', 'Arial', sans-serif;
 }
 .hero {
-  background: linear-gradient(135deg, #1a237e 0%, #0d47a1 50%, #b71c1c 100%);
-  padding: 60px 40px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 56px 40px 48px;
   text-align: center;
 }
-.hero h1 { font-size: 2.4em; font-weight: 800; letter-spacing: -0.02em; }
-.hero .subtitle { font-size: 1.1em; color: rgba(255,255,255,0.7); margin-top: 12px; max-width: 700px; margin-left: auto; margin-right: auto; }
-.hero .meta { font-size: 0.85em; color: rgba(255,255,255,0.4); margin-top: 20px; }
+.hero h1 { font-size: 2em; font-weight: 700; letter-spacing: -0.01em; }
+.hero .subtitle { font-size: 1em; color: var(--dim); margin-top: 14px; max-width: 640px; margin-left: auto; margin-right: auto; line-height: 1.6; }
+.hero .meta { font-size: 0.8em; color: #666; margin-top: 20px; letter-spacing: 0.03em; text-transform: uppercase; }
 
 .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
 
 .section {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 3px;
   padding: 32px;
   margin: 24px 0;
 }
 .section h2 {
-  font-size: 1.5em;
-  font-weight: 700;
+  font-size: 1.3em;
+  font-weight: 600;
   margin-bottom: 8px;
-  color: var(--accent);
+  color: var(--text);
+  letter-spacing: -0.01em;
 }
-.section .desc { color: var(--dim); margin-bottom: 24px; font-size: 0.95em; }
+.section .desc { color: var(--dim); margin-bottom: 24px; font-size: 0.9em; }
 
 /* How it works */
 .how-grid {
@@ -60,21 +66,22 @@ body {
   gap: 16px;
 }
 .how-card {
-  background: rgba(255,255,255,0.03);
+  background: rgba(255,255,255,0.02);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 2px;
   padding: 20px;
 }
 .how-card .num {
   display: inline-block;
-  width: 32px; height: 32px;
-  line-height: 32px;
+  width: 24px; height: 24px;
+  line-height: 24px;
   text-align: center;
-  background: var(--accent);
-  color: var(--bg);
-  border-radius: 50%;
-  font-weight: 700;
-  font-size: 0.85em;
+  background: transparent;
+  color: var(--dim);
+  border: 1px solid var(--dim);
+  border-radius: 2px;
+  font-weight: 600;
+  font-size: 0.75em;
   margin-bottom: 10px;
 }
 .how-card h3 { font-size: 1em; margin-bottom: 6px; }
@@ -84,11 +91,11 @@ body {
 .outcome-bar-container { margin: 24px 0; }
 .outcome-bar {
   display: flex;
-  height: 48px;
-  border-radius: 24px;
+  height: 36px;
+  border-radius: 2px;
   overflow: hidden;
   font-weight: 600;
-  font-size: 0.85em;
+  font-size: 0.82em;
 }
 .outcome-bar > div {
   display: flex;
@@ -115,7 +122,7 @@ body {
   font-size: 0.85em;
   color: var(--dim);
 }
-.leg-dot { width: 12px; height: 12px; border-radius: 50%; }
+.leg-dot { width: 10px; height: 10px; border-radius: 1px; }
 
 /* KPI row */
 .kpi-row {
@@ -125,14 +132,14 @@ body {
   margin: 20px 0;
 }
 .kpi {
-  background: rgba(255,255,255,0.03);
+  background: rgba(255,255,255,0.02);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 16px;
+  border-radius: 2px;
+  padding: 14px;
   text-align: center;
 }
-.kpi .value { font-size: 1.6em; font-weight: 700; }
-.kpi .label { font-size: 0.75em; color: var(--dim); margin-top: 4px; }
+.kpi .value { font-size: 1.4em; font-weight: 600; }
+.kpi .label { font-size: 0.72em; color: var(--dim); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
 
 /* Timeline */
 .timeline-chart {
@@ -149,7 +156,7 @@ body {
 .timeline-row .tl-bars { display: flex; gap: 2px; flex: 1; }
 .tl-cell {
   height: 32px;
-  border-radius: 4px;
+  border-radius: 2px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -202,7 +209,7 @@ body {
 .m-bar {
   flex: 1;
   min-width: 70px;
-  border-radius: 3px 3px 0 0;
+  border-radius: 1px 1px 0 0;
   transition: height 0.3s;
   cursor: pointer;
   position: relative;
@@ -227,9 +234,9 @@ body {
   gap: 16px;
 }
 .arch-card {
-  background: rgba(255,255,255,0.03);
+  background: rgba(255,255,255,0.02);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 2px;
   padding: 20px;
   position: relative;
   overflow: hidden;
@@ -245,15 +252,15 @@ body {
 .arch-card h3 { font-size: 1em; margin-bottom: 8px; }
 .arch-card .arch-desc { font-size: 0.82em; color: var(--dim); margin-bottom: 12px; }
 .arch-bar {
-  height: 6px;
+  height: 4px;
   background: var(--border);
-  border-radius: 3px;
+  border-radius: 1px;
   overflow: hidden;
   margin-bottom: 8px;
 }
 .arch-bar-fill {
   height: 100%;
-  border-radius: 3px;
+  border-radius: 1px;
   transition: width 0.6s ease;
 }
 .arch-stats { font-size: 0.75em; color: var(--dim); }
@@ -280,7 +287,7 @@ body {
 .whatif-mini-bar {
   display: flex;
   height: 8px;
-  border-radius: 4px;
+  border-radius: 1px;
   overflow: hidden;
   width: 150px;
 }
@@ -296,32 +303,32 @@ input[type=range] {
   -moz-appearance: none;
   appearance: none;
   width: 100%;
-  height: 6px;
+  height: 4px;
   background: var(--border);
-  border-radius: 3px;
+  border-radius: 1px;
   outline: none;
   cursor: pointer;
 }
 input[type=range]::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
   background: var(--accent);
   cursor: pointer;
 }
 input[type=range]::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
   background: var(--accent);
   cursor: pointer;
   border: none;
 }
 input[type=range]::-moz-range-track {
-  height: 6px;
+  height: 4px;
   background: var(--border);
-  border-radius: 3px;
+  border-radius: 1px;
   border: none;
 }
 
@@ -331,25 +338,120 @@ input[type=range]::-moz-range-track {
   position: fixed;
   background: #2a2d3a;
   border: 1px solid #444;
-  border-radius: 8px;
+  border-radius: 2px;
   padding: 12px;
   font-size: 0.82em;
   z-index: 1000;
   max-width: 280px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
   pointer-events: none;
 }
 
 /* Insight callout */
 .insight {
-  background: rgba(79, 195, 247, 0.08);
-  border-left: 3px solid var(--accent);
-  border-radius: 0 8px 8px 0;
-  padding: 16px 20px;
+  background: rgba(142, 170, 220, 0.06);
+  border-left: 2px solid var(--accent);
+  border-radius: 0;
+  padding: 14px 20px;
   margin: 16px 0;
-  font-size: 0.9em;
+  font-size: 0.88em;
 }
-.insight strong { color: var(--accent); }
+.insight strong { color: var(--text); }
+
+/* Narrative timeline */
+.tl-narrative {
+  border-left: 2px solid var(--border);
+  margin-left: 20px;
+  padding-left: 24px;
+}
+.tl-step {
+  position: relative;
+  margin-bottom: 20px;
+  padding-bottom: 4px;
+}
+.tl-step:last-child { margin-bottom: 0; }
+.tl-dot {
+  position: absolute;
+  left: -31px;
+  top: 4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 1px;
+  background: var(--border);
+  border: 2px solid var(--bg);
+}
+.tl-step.tl-key .tl-dot { background: var(--accent); }
+.tl-round {
+  font-family: 'Inter', 'Helvetica Neue', sans-serif;
+  font-size: 0.72em;
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+.tl-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.tl-tag {
+  font-family: 'Inter', 'Helvetica Neue', sans-serif;
+  font-size: 0.72em;
+  padding: 2px 8px;
+  border-radius: 2px;
+  color: #fff;
+  font-weight: 500;
+}
+.tl-note {
+  font-size: 0.82em;
+  color: var(--dim);
+  font-style: italic;
+}
+.tl-shock {
+  font-family: 'Inter', 'Helvetica Neue', sans-serif;
+  font-size: 0.72em;
+  color: var(--recession);
+  margin-top: 4px;
+  font-weight: 500;
+}
+.tl-metrics-inline {
+  font-family: 'Inter', 'Helvetica Neue', sans-serif;
+  font-size: 0.72em;
+  color: var(--dim);
+  margin-top: 4px;
+}
+
+/* Dig deeper */
+.deeper-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+.deeper-card {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 20px;
+}
+.deeper-card h3 {
+  font-size: 0.95em;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+.deeper-card p {
+  font-size: 0.85em;
+  color: var(--dim);
+  margin-bottom: 12px;
+}
+.deeper-link {
+  font-family: 'Inter', 'Helvetica Neue', sans-serif;
+  font-size: 0.8em;
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+.deeper-link:hover { border-bottom-color: var(--accent); }
 
 /* Responsive */
 @media (max-width: 768px) {
@@ -424,10 +526,13 @@ input[type=range]::-moz-range-track {
 
 <!-- TIMELINE -->
 <div class="section">
-  <h2>Example War Timeline (seed=42)</h2>
-  <div class="desc">One simulation showing how strategies evolve round by round. Each cell = one player's choice in that round</div>
-  <div class="timeline-chart" id="timeline"></div>
-  <div style="margin-top:16px">
+  <h2>One Simulated War, Step by Step</h2>
+  <div class="desc">This is simulation #42 out of 500 — a single "run" of the model. Each round is ~2 weeks. Watch how strategies shift as the situation changes. This particular run ends in a coalition limited victory after 10 rounds.</div>
+
+  <div class="tl-narrative" id="timeline-narrative"></div>
+
+  <div style="margin-top:24px">
+    <h3 style="font-size:0.95em; margin-bottom:12px; color:var(--dim)">Key metrics over time</h3>
     <div class="metric-wrapper" id="metric-oil"></div>
     <div class="metric-wrapper" id="metric-iran-mil"></div>
     <div class="metric-wrapper" id="metric-recession"></div>
@@ -507,8 +612,34 @@ input[type=range]::-moz-range-track {
   <div class="insight"><strong>6. "Managed degradation" (clean win) happens only 19% of the time.</strong> In most scenarios, even winning is expensive.</div>
 </div>
 
+<!-- DIG DEEPER -->
+<div class="section">
+  <h2>Want to Dig Deeper?</h2>
+  <div class="desc">The full model is open-source. You can run it yourself, change parameters, or build on it.</div>
+  <div class="deeper-grid">
+    <div class="deeper-card">
+      <h3>Read the Code</h3>
+      <p>The core model is a single Python file (~600 lines). It implements a 4-player repeated game with Nash equilibrium selection, stochastic shocks, and oil price dynamics. No ML — just classical game theory.</p>
+      <a class="deeper-link" href="https://github.com/mool32/game_theory_models/blob/main/game_theory_conflict_model.py" target="_blank">game_theory_conflict_model.py &rarr;</a>
+    </div>
+    <div class="deeper-card">
+      <h3>Run Your Own Scenarios</h3>
+      <p>Clone the repo, change parameters (patience, oil price, shock probabilities, military capabilities), and run 500 simulations on your laptop in under a minute.</p>
+      <a class="deeper-link" href="https://github.com/mool32/game_theory_models" target="_blank">github.com/mool32/game_theory_models &rarr;</a>
+    </div>
+    <div class="deeper-card">
+      <h3>Key Assumptions</h3>
+      <p>Each player maximizes a discounted payoff function that weighs military gains, casualties, oil costs, domestic support, and nuclear risks. Iran's "revolutionary" archetype overweights regime survival. Strategies are selected via best-response dynamics (approximate Nash).</p>
+    </div>
+    <div class="deeper-card">
+      <h3>What the Model Doesn't Capture</h3>
+      <p>Diplomacy, intelligence operations, cyber warfare, internal regime politics, Chinese/Russian involvement beyond oil price effects, humanitarian costs, long-term occupation dynamics. It's a simplification — useful for intuition, not prediction.</p>
+    </div>
+  </div>
+</div>
+
 <!-- DISCLAIMER -->
-<div class="section" style="border-color: rgba(244,67,54,0.3);">
+<div class="section" style="border-color: rgba(194,84,80,0.3);">
   <h2 style="color:var(--recession)">Disclaimer</h2>
   <p style="color:var(--dim); font-size:0.9em;">This is an exploratory game-theoretic model, not a forecast. Real conflicts involve thousands of variables that no model can capture. The probabilities shown reflect the model's internal logic, not objective likelihoods. The model is useful for understanding <em>dynamics</em> and <em>sensitivity</em>, not for prediction.</p>
 </div>
@@ -605,35 +736,66 @@ function renderArchetypes() {
 }
 
 // ============================================================
-// 3. TIMELINE
+// 3. TIMELINE (narrative)
 // ============================================================
 function renderTimeline() {
   const rounds = DATA.timeline.rounds;
-  const container = el('timeline');
+  const container = el('timeline-narrative');
 
-  const players = [
-    { key: 'usa', label: 'USA' },
-    { key: 'iran', label: 'Iran' },
-    { key: 'israel', label: 'Israel' },
-    { key: 'hez', label: 'Hezbollah' },
-  ];
+  const stratColors = {
+    air_strikes: '#c25450', standoff_only: '#7986cb', ground_operation: '#a33a38',
+    declare_victory: '#5a9a6b', proxy_escalation: '#c9a855', retaliate: '#c25450',
+    attrition: '#c97843', hormuz_blockade: '#a870c4', independent_ops: '#5a8abf',
+    joint_strikes: '#4a9aa0', defensive_posture: '#6b7585', calibrated: '#c9893a',
+    full_barrage: '#a33a38', ceasefire: '#5a9a6b'
+  };
 
-  // Round headers
-  let html = '<div class="timeline-row"><div class="tl-label" style="font-weight:600">Round</div><div class="tl-bars">';
+  const stratLabels = {
+    air_strikes: 'Air Strikes', standoff_only: 'Standoff Only', ground_operation: 'Ground Operation',
+    declare_victory: 'Declare Victory', proxy_escalation: 'Proxy Escalation', retaliate: 'Retaliate',
+    attrition: 'Attrition', hormuz_blockade: 'Hormuz Blockade', independent_ops: 'Independent Ops',
+    joint_strikes: 'Joint Strikes', defensive_posture: 'Defensive', calibrated: 'Calibrated Strikes',
+    full_barrage: 'Full Barrage', ceasefire: 'Ceasefire'
+  };
+
+  // Annotate key turning points
+  const annotations = {
+    1: 'War begins. US opens with air strikes, Iran responds through proxies.',
+    4: 'Iran retaliates directly. Hezbollah launches full barrage on Israel.',
+    6: 'US commits ground forces — Iran\'s military drops from 33% to 20%.',
+    7: 'Turning point: Iran blocks the Strait of Hormuz. Oil jumps to $123.',
+    8: 'Oil hits $161. Iraqi militias attack US base. Hezbollah signals ceasefire.',
+    9: 'Oil at $187. Iran\'s conventional military destroyed, but Hormuz still blocked.',
+    10: 'US declares victory and begins withdrawal. Oil at $191.'
+  };
+
+  const keyRounds = new Set([1, 4, 6, 7, 8, 10]);
+
+  let html = '';
   for (const r of rounds) {
-    html += `<div class="tl-cell" style="background:transparent;color:var(--dim);font-size:0.75em">${r.round}<br><span style="font-size:0.8em">${r.date.slice(5)}</span></div>`;
-  }
-  html += '</div></div>';
-
-  for (const p of players) {
-    html += `<div class="timeline-row"><div class="tl-label">${p.label}</div><div class="tl-bars">`;
-    for (const r of rounds) {
+    const isKey = keyRounds.has(r.round);
+    html += `<div class="tl-step ${isKey ? 'tl-key' : ''}">`;
+    html += `<div class="tl-dot"></div>`;
+    html += `<div class="tl-round">Round ${r.round}</div>`;
+    html += `<div class="tl-actions">`;
+    const players = [
+      { key: 'usa', label: 'US' }, { key: 'iran', label: 'Iran' },
+      { key: 'israel', label: 'Israel' }, { key: 'hez', label: 'Hez' }
+    ];
+    for (const p of players) {
       const strat = r[p.key];
-      const cls = 's-' + strat.replace(/ /g, '_');
-      const short = strat.replace('_', ' ');
-      html += `<div class="tl-cell ${cls}" title="${p.label}: ${strat}">${short}</div>`;
+      const color = stratColors[strat] || '#6b7585';
+      html += `<span class="tl-tag" style="background:${color}">${p.label}: ${stratLabels[strat] || strat}</span>`;
     }
-    html += '</div></div>';
+    html += `</div>`;
+    if (annotations[r.round]) {
+      html += `<div class="tl-note">${annotations[r.round]}</div>`;
+    }
+    if (r.shocks && r.shocks.length > 0) {
+      html += `<div class="tl-shock">Shock: ${r.shocks.map(s => s.split(':')[0].replace(/_/g, ' ')).join(', ')}</div>`;
+    }
+    html += `<div class="tl-metrics-inline">Oil $${r.oil.toFixed(0)} · Iran military ${r.iran_mil.toFixed(0)}% · Hormuz ${r.hormuz.toFixed(0)}%</div>`;
+    html += `</div>`;
   }
   container.innerHTML = html;
 
