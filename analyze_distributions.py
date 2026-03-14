@@ -613,19 +613,19 @@ def what_if_compare(n_sims: int = 300):
     print("=" * 80)
 
     scenarios = {
-        "Базовый (рев. Иран)": {"iran_is_revolutionary": True},
-        "Рац. Иран": {"iran_is_revolutionary": False},
-        "Трамп нетерпеливый (δ=0.75)": {
+        "Base (rev. Iran)": {"iran_is_revolutionary": True},
+        "Rational Iran": {"iran_is_revolutionary": False},
+        "Impatient Trump (d=0.75)": {
             "iran_is_revolutionary": True, "usa_discount": 0.75},
-        "Трамп как Буш (δ=0.90)": {
+        "Trump like Bush (d=0.90)": {
             "iran_is_revolutionary": True, "usa_discount": 0.90},
-        "Нефть уже $110": {
+        "Oil already $110": {
             "iran_is_revolutionary": True, "initial_oil_price": 110},
-        "Ядерн. объекты на 50%": {
+        "Nuclear sites 50%": {
             "iran_is_revolutionary": True, "iran_nuclear_facilities_pct": 50},
-        "Без шоков": {
+        "No shocks": {
             "iran_is_revolutionary": True, "enable_shocks": False},
-        "Без тумана войны": {
+        "No fog of war": {
             "iran_is_revolutionary": True, "enable_fog_of_war": False},
     }
 
@@ -635,7 +635,7 @@ def what_if_compare(n_sims: int = 300):
         all_results[name] = monte_carlo(n_sims, overrides)
 
     # Print comparison table
-    print(f"\n  {'Сценарий':<30s} {'Coalition%':>10s} {'Iran%':>8s} "
+    print(f"\n  {'Scenario':<30s} {'Coalition%':>10s} {'Iran%':>8s} "
           f"{'Rounds':>7s} {'Oil$':>6s} {'Nuke%':>6s} {'USAcas':>7s}")
     print(f"  {'-'*76}")
 

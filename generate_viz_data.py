@@ -98,25 +98,25 @@ def generate_viz_data():
         max_oil = max(h.oil_price for h in r["history"]) if r["history"] else 85
 
         if outcome == "coalition_decisive_victory" and rounds < 8:
-            arch = "Быстрый нокаут"
+            arch = "Quick Knockout"
         elif outcome == "coalition_limited_victory" and not nuclear and max_oil < 150:
-            arch = "Управляемая деградация"
+            arch = "Managed Degradation"
         elif outcome == "coalition_limited_victory" and max_oil >= 150:
-            arch = "Пиррова победа"
+            arch = "Pyrrhic Victory"
         elif outcome == "coalition_limited_victory" and nuclear:
-            arch = "Ядерная тень"
+            arch = "Nuclear Shadow"
         elif outcome == "iran_strategic_victory" and hormuz:
-            arch = "Ормузское истощение"
+            arch = "Hormuz Exhaustion"
         elif outcome == "iran_strategic_victory" and rounds < 5:
-            arch = "Быстрый отход США"
+            arch = "Quick US Withdrawal"
         elif outcome == "iran_strategic_victory":
-            arch = "Война на истощение"
+            arch = "Attrition War"
         elif outcome == "negotiated_settlement":
-            arch = "Дипломатический выход"
+            arch = "Diplomatic Exit"
         elif outcome == "frozen_conflict":
-            arch = "Замороженный конфликт"
+            arch = "Frozen Conflict"
         else:
-            arch = "Прочее"
+            arch = "Other"
 
         archetype_counts[arch] += 1
         if len(archetype_examples[arch]) < 1:
@@ -142,14 +142,14 @@ def generate_viz_data():
     # 5. What-if scenarios
     print("  [5/5] What-if scenarios...", flush=True)
     scenarios = {
-        "Базовый сценарий": {"iran_is_revolutionary": True},
-        "Рациональный Иран": {"iran_is_revolutionary": False},
-        "Трамп нетерпелив": {"iran_is_revolutionary": True, "usa_discount": 0.75},
-        "Трамп как Буш": {"iran_is_revolutionary": True, "usa_discount": 0.90},
-        "Нефть уже $110": {"iran_is_revolutionary": True, "initial_oil_price": 110},
-        "Ядерные объекты разбиты на 50%": {
+        "Base Scenario": {"iran_is_revolutionary": True},
+        "Rational Iran": {"iran_is_revolutionary": False},
+        "Impatient Trump": {"iran_is_revolutionary": True, "usa_discount": 0.75},
+        "Trump like Bush": {"iran_is_revolutionary": True, "usa_discount": 0.90},
+        "Oil already $110": {"iran_is_revolutionary": True, "initial_oil_price": 110},
+        "Nuclear sites 50% destroyed": {
             "iran_is_revolutionary": True, "iran_nuclear_facilities_pct": 50},
-        "Без случайных шоков": {"iran_is_revolutionary": True, "enable_shocks": False},
+        "No random shocks": {"iran_is_revolutionary": True, "enable_shocks": False},
     }
     whatif = {}
     for name, overrides in scenarios.items():
