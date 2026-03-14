@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>USA vs Iran: Game Theory Conflict Model</title>
+<style>
+:root {
+  --bg: #0f1117;
+  --card: #1a1d27;
+  --border: #2a2d3a;
+  --text: #e0e0e0;
+  --dim: #8892a4;
+  --accent: #4fc3f7;
+  --coalition: #4caf50;
+  --iran: #f44336;
+  --other: #ffb74d;
+  --oil: #ff9800;
+  --nuclear: #e040fb;
+  --recession: #ef5350;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  padding: 0;
+}
+.hero {
+  background: linear-gradient(135deg, #1a237e 0%, #0d47a1 50%, #b71c1c 100%);
+  padding: 60px 40px;
+  text-align: center;
+}
+.hero h1 { font-size: 2.4em; font-weight: 800; letter-spacing: -0.02em; }
+.hero .subtitle { font-size: 1.1em; color: rgba(255,255,255,0.7); margin-top: 12px; max-width: 700px; margin-left: auto; margin-right: auto; }
+.hero .meta { font-size: 0.85em; color: rgba(255,255,255,0.4); margin-top: 20px; }
+
+.container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+.section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  margin: 24px 0;
+}
+.section h2 {
+  font-size: 1.5em;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--accent);
+}
+.section .desc { color: var(--dim); margin-bottom: 24px; font-size: 0.95em; }
+
+/* How it works */
+.how-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+.how-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+.how-card .num {
+  display: inline-block;
+  width: 32px; height: 32px;
+  line-height: 32px;
+  text-align: center;
+  background: var(--accent);
+  color: var(--bg);
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.85em;
+  margin-bottom: 10px;
+}
+.how-card h3 { font-size: 1em; margin-bottom: 6px; }
+.how-card p { color: var(--dim); font-size: 0.85em; }
+
+/* Outcome bar */
+.outcome-bar-container { margin: 24px 0; }
+.outcome-bar {
+  display: flex;
+  height: 48px;
+  border-radius: 24px;
+  overflow: hidden;
+  font-weight: 600;
+  font-size: 0.85em;
+}
+.outcome-bar > div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: width 0.6s ease;
+  cursor: pointer;
+  position: relative;
+}
+.outcome-bar > div:hover { filter: brightness(1.2); }
+.ob-coalition { background: var(--coalition); color: #fff; }
+.ob-iran { background: var(--iran); color: #fff; }
+.ob-other { background: var(--other); color: #333; }
+.outcome-legend {
+  display: flex;
+  gap: 24px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.outcome-legend .leg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85em;
+  color: var(--dim);
+}
+.leg-dot { width: 12px; height: 12px; border-radius: 50%; }
+
+/* KPI row */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+.kpi {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+}
+.kpi .value { font-size: 1.6em; font-weight: 700; }
+.kpi .label { font-size: 0.75em; color: var(--dim); margin-top: 4px; }
+
+/* Timeline */
+.timeline-chart {
+  overflow-x: auto;
+  padding: 16px 0;
+}
+.timeline-row {
+  display: flex;
+  align-items: center;
+  margin: 4px 0;
+  font-size: 0.82em;
+}
+.timeline-row .tl-label { width: 100px; color: var(--dim); text-align: right; padding-right: 12px; flex-shrink: 0; }
+.timeline-row .tl-bars { display: flex; gap: 2px; flex: 1; }
+.tl-cell {
+  height: 32px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7em;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  min-width: 70px;
+  flex: 1;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.15s;
+}
+.tl-cell:hover { transform: scaleY(1.2); z-index: 2; }
+
+/* Strategy colors */
+.s-air_strikes { background: #e57373; }
+.s-standoff_only { background: #7986cb; }
+.s-ground_operation { background: #d32f2f; }
+.s-declare_victory { background: #66bb6a; }
+.s-proxy_escalation { background: #ffb74d; }
+.s-retaliate { background: #ef5350; }
+.s-attrition { background: #ff7043; }
+.s-hormuz_blockade { background: #ab47bc; }
+.s-independent_ops { background: #42a5f5; }
+.s-joint_strikes { background: #26c6da; }
+.s-defensive_posture { background: #78909c; }
+.s-calibrated { background: #ffa726; }
+.s-full_barrage { background: #e53935; }
+.s-ceasefire { background: #66bb6a; }
+
+/* Metric chart */
+.metric-track {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 100px;
+  margin: 4px 0;
+  padding-left: 100px;
+}
+.metric-track .m-label {
+  position: absolute;
+  left: 0;
+  width: 96px;
+  text-align: right;
+  padding-right: 12px;
+  color: var(--dim);
+  font-size: 0.82em;
+}
+.metric-wrapper { position: relative; margin: 8px 0; }
+.m-bar {
+  flex: 1;
+  min-width: 70px;
+  border-radius: 3px 3px 0 0;
+  transition: height 0.3s;
+  cursor: pointer;
+  position: relative;
+}
+.m-bar:hover { filter: brightness(1.3); }
+.m-bar .m-val {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.65em;
+  color: var(--dim);
+  white-space: nowrap;
+  display: none;
+}
+.m-bar:hover .m-val { display: block; }
+
+/* Archetypes */
+.arch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+.arch-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.arch-card .arch-pct {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  font-size: 2em;
+  font-weight: 800;
+  color: rgba(255,255,255,0.08);
+}
+.arch-card h3 { font-size: 1em; margin-bottom: 8px; }
+.arch-card .arch-desc { font-size: 0.82em; color: var(--dim); margin-bottom: 12px; }
+.arch-bar {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.arch-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+.arch-stats { font-size: 0.75em; color: var(--dim); }
+
+/* What-if */
+.whatif-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85em;
+}
+.whatif-table th {
+  text-align: left;
+  padding: 10px 12px;
+  color: var(--dim);
+  font-weight: 600;
+  border-bottom: 2px solid var(--border);
+  font-size: 0.85em;
+}
+.whatif-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.whatif-table tr:hover td { background: rgba(255,255,255,0.03); }
+.whatif-mini-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  width: 150px;
+}
+.whatif-mini-bar > div { transition: width 0.4s ease; }
+
+/* Sensitivity slider section */
+.slider-container { margin: 20px 0; }
+.slider-label { display: flex; justify-content: space-between; margin-bottom: 8px; }
+.slider-label span { font-size: 0.85em; color: var(--dim); }
+.slider-label .slider-val { color: var(--accent); font-weight: 700; font-size: 1.1em; }
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+}
+
+/* Tooltip */
+.tooltip {
+  display: none;
+  position: fixed;
+  background: #2a2d3a;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 0.82em;
+  z-index: 1000;
+  max-width: 280px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  pointer-events: none;
+}
+
+/* Insight callout */
+.insight {
+  background: rgba(79, 195, 247, 0.08);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  padding: 16px 20px;
+  margin: 16px 0;
+  font-size: 0.9em;
+}
+.insight strong { color: var(--accent); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .hero { padding: 40px 20px; }
+  .hero h1 { font-size: 1.6em; }
+  .section { padding: 20px; }
+  .how-grid { grid-template-columns: 1fr; }
+  .arch-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>USA vs Iran: Conflict Model</h1>
+  <div class="subtitle">Game theory simulation of a potential US-Iran military conflict with 4 players, stochastic shocks, oil dynamics, and nuclear escalation</div>
+  <div class="meta">v5.1 &middot; 500 Monte Carlo simulations &middot; Biweekly rounds &middot; March 2026 start</div>
+</div>
+
+<div class="container">
+
+<!-- HOW IT WORKS -->
+<div class="section">
+  <h2>How the Model Works</h2>
+  <div class="desc">Each "round" represents ~2 weeks. Four players choose strategies simultaneously, like a poker game where everyone reveals their hand at once.</div>
+  <div class="how-grid">
+    <div class="how-card">
+      <div class="num">1</div>
+      <h3>4 Players</h3>
+      <p><strong>USA</strong> (air strikes, ground ops, or withdraw), <strong>Israel</strong> (independent or joint), <strong>Iran</strong> (retaliate, blockade Hormuz, or endure), <strong>Hezbollah</strong> (rocket barrages or ceasefire)</p>
+    </div>
+    <div class="how-card">
+      <div class="num">2</div>
+      <h3>Each Optimizes Payoffs</h3>
+      <p>Every player picks the strategy that maximizes their expected benefit, considering military losses, domestic politics, oil prices, and nuclear risks</p>
+    </div>
+    <div class="how-card">
+      <div class="num">3</div>
+      <h3>Random Shocks</h3>
+      <p>Unexpected events: Iraqi militia attacks, Hormuz mine incidents, IRGC leadership kills, embassy seizures, tanker attacks &mdash; each changes the calculus</p>
+    </div>
+    <div class="how-card">
+      <div class="num">4</div>
+      <h3>500x Monte Carlo</h3>
+      <p>We run 500 simulations with different random seeds. The distribution of outcomes shows probabilities, not a single prediction</p>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN PREDICTION -->
+<div class="section" id="sec-main">
+  <h2>Base Prediction: Who Wins?</h2>
+  <div class="desc">Distribution across 500 simulations with a revolutionary (risk-taking) Iran</div>
+  <div class="outcome-bar-container">
+    <div class="outcome-bar" id="main-outcome-bar"></div>
+    <div class="outcome-legend">
+      <div class="leg"><div class="leg-dot" style="background:var(--coalition)"></div> Coalition victory</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--iran)"></div> Iran strategic victory</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--other)"></div> Negotiated / Frozen</div>
+    </div>
+  </div>
+  <div class="kpi-row" id="main-kpis"></div>
+  <div class="insight" id="main-insight"></div>
+</div>
+
+<!-- WAR ARCHETYPES -->
+<div class="section">
+  <h2>How Wars End: 6 Archetypes</h2>
+  <div class="desc">Not all coalition victories are equal. The model identifies distinct "war stories"</div>
+  <div class="arch-grid" id="arch-grid"></div>
+</div>
+
+<!-- TIMELINE -->
+<div class="section">
+  <h2>Example War Timeline (seed=42)</h2>
+  <div class="desc">One simulation showing how strategies evolve round by round. Each cell = one player's choice in that round</div>
+  <div class="timeline-chart" id="timeline"></div>
+  <div style="margin-top:16px">
+    <div class="metric-wrapper" id="metric-oil"></div>
+    <div class="metric-wrapper" id="metric-iran-mil"></div>
+    <div class="metric-wrapper" id="metric-recession"></div>
+  </div>
+</div>
+
+<!-- SENSITIVITY: USA PATIENCE -->
+<div class="section" id="sec-usa-patience">
+  <h2>What If Trump Is More Patient?</h2>
+  <div class="desc">The "discount factor" measures how much a player values future gains vs. present costs. Lower = more impatient, wants quick results</div>
+  <div class="slider-container">
+    <div class="slider-label">
+      <span>Impatient (wants quick win)</span>
+      <span class="slider-val" id="usa-patience-val">0.82</span>
+      <span>Patient (like Bush post-9/11)</span>
+    </div>
+    <input type="range" id="usa-patience-slider" min="0" max="6" value="3" step="1">
+  </div>
+  <div class="outcome-bar-container">
+    <div class="outcome-bar" id="usa-patience-bar"></div>
+  </div>
+  <div class="kpi-row" id="usa-patience-kpis"></div>
+  <div class="insight" id="usa-patience-insight"></div>
+</div>
+
+<!-- SENSITIVITY: OIL -->
+<div class="section" id="sec-oil">
+  <h2>What If Oil Is Already Expensive?</h2>
+  <div class="desc">Starting oil price changes everything: higher oil = Iran's Hormuz blockade becomes more painful for the US</div>
+  <div class="slider-container">
+    <div class="slider-label">
+      <span>Low oil ($75)</span>
+      <span class="slider-val" id="oil-val">$85</span>
+      <span>High oil ($130)</span>
+    </div>
+    <input type="range" id="oil-slider" min="0" max="5" value="1" step="1">
+  </div>
+  <div class="outcome-bar-container">
+    <div class="outcome-bar" id="oil-bar"></div>
+  </div>
+  <div class="kpi-row" id="oil-kpis"></div>
+  <div class="insight" id="oil-insight"></div>
+</div>
+
+<!-- WHAT-IF COMPARISON -->
+<div class="section">
+  <h2>Scenario Comparison</h2>
+  <div class="desc">Side-by-side comparison of all what-if scenarios</div>
+  <div style="overflow-x:auto">
+    <table class="whatif-table" id="whatif-table">
+      <thead>
+        <tr>
+          <th>Scenario</th>
+          <th>Outcome Distribution</th>
+          <th>Coalition %</th>
+          <th>Iran %</th>
+          <th>Avg Rounds</th>
+          <th>Avg Oil $</th>
+          <th>Nuclear %</th>
+          <th>Recession</th>
+        </tr>
+      </thead>
+      <tbody id="whatif-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- KEY INSIGHTS -->
+<div class="section">
+  <h2>Key Findings</h2>
+  <div class="desc">What does the model tell us?</div>
+  <div class="insight"><strong>1. Coalition wins most scenarios (~73%)</strong> but the most common outcome (46%) is a "Pyrrhic victory" with oil &gt;$150 and significant economic damage.</div>
+  <div class="insight"><strong>2. Oil price is the single biggest lever.</strong> Starting at $130 instead of $85 flips the odds: Iran wins 58% vs 27%. Iran's strategy of blocking the Strait of Hormuz becomes devastating when oil is already expensive.</div>
+  <div class="insight"><strong>3. Trump's patience matters a lot.</strong> An impatient Trump (quick withdrawal) gives Iran a ~33% chance. A patient "Bush-like" commitment drops it to ~20%.</div>
+  <div class="insight"><strong>4. Nuclear breakout paradoxically helps the coalition.</strong> When Iran approaches nuclear capability, it triggers escalation that accelerates Iran's military destruction. But it creates long-term instability.</div>
+  <div class="insight"><strong>5. Short wars favor Iran.</strong> If the war ends in &lt;8 rounds, Iran wins 100% of the time &mdash; because the only reason for a short war is US withdrawal.</div>
+  <div class="insight"><strong>6. "Managed degradation" (clean win) happens only 19% of the time.</strong> In most scenarios, even winning is expensive.</div>
+</div>
+
+<!-- DISCLAIMER -->
+<div class="section" style="border-color: rgba(244,67,54,0.3);">
+  <h2 style="color:var(--recession)">Disclaimer</h2>
+  <p style="color:var(--dim); font-size:0.9em;">This is an exploratory game-theoretic model, not a forecast. Real conflicts involve thousands of variables that no model can capture. The probabilities shown reflect the model's internal logic, not objective likelihoods. The model is useful for understanding <em>dynamics</em> and <em>sensitivity</em>, not for prediction.</p>
+</div>
+
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// ============================================================
+// EMBEDDED DATA
+// ============================================================
+const DATA = {"timeline": {"outcome": "coalition_limited_victory", "rounds": [{"round": 1, "date": "2026-03-01", "usa": "air_strikes", "iran": "proxy_escalation", "israel": "independent_ops", "hez": "calibrated", "oil": 87.2, "hormuz": 100, "iran_mil": 51.6, "usa_cas": 0, "iran_cas": 0.18, "israel_cas": 0.06, "usa_support": 52.7, "iran_support": 70, "recession_risk": 0.0, "iran_missiles": 67.7, "hez_missiles": 81.0, "shocks": []}, {"round": 2, "date": "2026-03-02", "usa": "standoff_only", "iran": "proxy_escalation", "israel": "joint_strikes", "hez": "calibrated", "oil": 85.3, "hormuz": 100, "iran_mil": 48.6, "usa_cas": 0, "iran_cas": 0.33, "israel_cas": 0.13, "usa_support": 49.3, "iran_support": 71.4, "recession_risk": 0.0, "iran_missiles": 64.7, "hez_missiles": 77.9, "shocks": []}, {"round": 3, "date": "2026-03-03", "usa": "standoff_only", "iran": "proxy_escalation", "israel": "independent_ops", "hez": "calibrated", "oil": 84.1, "hormuz": 100, "iran_mil": 43.4, "usa_cas": 0, "iran_cas": 0.42, "israel_cas": 0.17, "usa_support": 47.2, "iran_support": 72.2, "recession_risk": 0.0, "iran_missiles": 61.2, "hez_missiles": 71.4, "shocks": []}, {"round": 4, "date": "2026-03-04", "usa": "standoff_only", "iran": "retaliate", "israel": "joint_strikes", "hez": "full_barrage", "oil": 83.8, "hormuz": 100, "iran_mil": 36.3, "usa_cas": 0.01, "iran_cas": 0.63, "israel_cas": 0.33, "usa_support": 46.3, "iran_support": 74.8, "recession_risk": 0.0, "iran_missiles": 56.4, "hez_missiles": 58.7, "shocks": []}, {"round": 5, "date": "2026-03-05", "usa": "standoff_only", "iran": "proxy_escalation", "israel": "defensive_posture", "hez": "calibrated", "oil": 83.5, "hormuz": 100, "iran_mil": 33.4, "usa_cas": 0.01, "iran_cas": 0.84, "israel_cas": 0.35, "usa_support": 42.2, "iran_support": 77.0, "recession_risk": 0.0, "iran_missiles": 53.1, "hez_missiles": 52.1, "shocks": []}, {"round": 6, "date": "2026-03-06", "usa": "ground_operation", "iran": "attrition", "israel": "defensive_posture", "hez": "calibrated", "oil": 83.2, "hormuz": 100, "iran_mil": 19.6, "usa_cas": 0.1, "iran_cas": 1.45, "israel_cas": 0.36, "usa_support": 37.9, "iran_support": 79.7, "recession_risk": 0.0, "iran_missiles": 53.1, "hez_missiles": 46.7, "shocks": []}, {"round": 7, "date": "2026-03-07", "usa": "standoff_only", "iran": "hormuz_blockade", "israel": "defensive_posture", "hez": "full_barrage", "oil": 122.6, "hormuz": 62.1, "iran_mil": 15.0, "usa_cas": 0.1, "iran_cas": 1.59, "israel_cas": 0.44, "usa_support": 37.9, "iran_support": 81.1, "recession_risk": 0.0, "iran_missiles": 50.3, "hez_missiles": 36.5, "shocks": []}, {"round": 8, "date": "2026-03-10", "usa": "air_strikes", "iran": "hormuz_blockade", "israel": "joint_strikes", "hez": "ceasefire", "oil": 161.0, "hormuz": 56.1, "iran_mil": 7.2, "usa_cas": 0.15, "iran_cas": 2.25, "israel_cas": 0.44, "usa_support": 40.9, "iran_support": 82.3, "recession_risk": 0.0, "iran_missiles": 46.4, "hez_missiles": 36.5, "shocks": ["iraqi_militia_attacks_us_base:A"]}, {"round": 9, "date": "2026-03-13", "usa": "air_strikes", "iran": "hormuz_blockade", "israel": "joint_strikes", "hez": "calibrated", "oil": 186.8, "hormuz": 45.7, "iran_mil": 0, "usa_cas": 0.15, "iran_cas": 2.46, "israel_cas": 0.45, "usa_support": 40.9, "iran_support": 88.0, "recession_risk": 0.0, "iran_missiles": 42.8, "hez_missiles": 31.4, "shocks": []}, {"round": 10, "date": "2026-03-16", "usa": "declare_victory", "iran": "proxy_escalation", "israel": "defensive_posture", "hez": "calibrated", "oil": 191.4, "hormuz": 47.3, "iran_mil": 0.0, "usa_cas": 0.15, "iran_cas": 2.46, "israel_cas": 0.47, "usa_support": 41.6, "iran_support": 86.3, "recession_risk": 0.16, "iran_missiles": 39.2, "hez_missiles": 25.7, "shocks": []}]}, "sensitivity_usa_patience": {"0.7": {"outcomes": {"coalition_decisive_victory": 1.3, "coalition_limited_victory": 66.0, "iran_strategic_victory": 32.7}, "avg_rounds": 10.2, "avg_oil": 130.4, "nuclear": 17.3, "usa_cas": 0.29, "iran_cas": 2.28, "recession": 0.12}, "0.75": {"outcomes": {"coalition_decisive_victory": 1.7, "coalition_limited_victory": 67.0, "iran_strategic_victory": 31.0, "negotiated_settlement": 0.3}, "avg_rounds": 10.7, "avg_oil": 131.7, "nuclear": 21.0, "usa_cas": 0.27, "iran_cas": 2.32, "recession": 0.13}, "0.78": {"outcomes": {"coalition_decisive_victory": 3.0, "coalition_limited_victory": 67.7, "iran_strategic_victory": 29.0, "negotiated_settlement": 0.3}, "avg_rounds": 10.9, "avg_oil": 134.4, "nuclear": 22.7, "usa_cas": 0.27, "iran_cas": 2.37, "recession": 0.14}, "0.82": {"outcomes": {"coalition_decisive_victory": 2.3, "coalition_limited_victory": 70.3, "iran_strategic_victory": 27.0, "negotiated_settlement": 0.3}, "avg_rounds": 11.2, "avg_oil": 136.3, "nuclear": 21.0, "usa_cas": 0.24, "iran_cas": 2.37, "recession": 0.16}, "0.85": {"outcomes": {"coalition_decisive_victory": 3.0, "coalition_limited_victory": 72.7, "iran_strategic_victory": 24.0, "negotiated_settlement": 0.3}, "avg_rounds": 11.5, "avg_oil": 137.7, "nuclear": 22.3, "usa_cas": 0.21, "iran_cas": 2.38, "recession": 0.18}, "0.88": {"outcomes": {"coalition_decisive_victory": 1.7, "coalition_limited_victory": 74.7, "iran_strategic_victory": 23.7}, "avg_rounds": 11.5, "avg_oil": 138.5, "nuclear": 23.0, "usa_cas": 0.2, "iran_cas": 2.38, "recession": 0.18}, "0.93": {"outcomes": {"coalition_decisive_victory": 3.7, "coalition_limited_victory": 77.3, "iran_strategic_victory": 19.0}, "avg_rounds": 11.9, "avg_oil": 139.2, "nuclear": 22.3, "usa_cas": 0.15, "iran_cas": 2.39, "recession": 0.18}}, "sensitivity_oil": {"75": {"outcomes": {"coalition_decisive_victory": 3.7, "coalition_limited_victory": 72.0, "iran_strategic_victory": 24.3}, "avg_rounds": 11.2, "avg_oil": 130.7, "nuclear": 19.3, "usa_cas": 0.24, "iran_cas": 2.35, "recession": 0.11}, "85": {"outcomes": {"coalition_decisive_victory": 2.3, "coalition_limited_victory": 70.3, "iran_strategic_victory": 27.0, "negotiated_settlement": 0.3}, "avg_rounds": 11.2, "avg_oil": 136.3, "nuclear": 21.0, "usa_cas": 0.24, "iran_cas": 2.37, "recession": 0.16}, "95": {"outcomes": {"coalition_decisive_victory": 2.0, "coalition_limited_victory": 67.7, "iran_strategic_victory": 30.3}, "avg_rounds": 11.1, "avg_oil": 144.6, "nuclear": 21.3, "usa_cas": 0.24, "iran_cas": 2.32, "recession": 0.24}, "105": {"outcomes": {"coalition_decisive_victory": 2.0, "coalition_limited_victory": 66.3, "iran_strategic_victory": 31.7}, "avg_rounds": 11.0, "avg_oil": 154.6, "nuclear": 20.7, "usa_cas": 0.23, "iran_cas": 2.28, "recession": 0.35}, "115": {"outcomes": {"coalition_decisive_victory": 1.0, "coalition_limited_victory": 59.3, "iran_strategic_victory": 39.7}, "avg_rounds": 10.8, "avg_oil": 169.4, "nuclear": 19.3, "usa_cas": 0.23, "iran_cas": 2.28, "recession": 0.48}, "130": {"outcomes": {"coalition_decisive_victory": 0.7, "coalition_limited_victory": 41.0, "iran_strategic_victory": 58.3}, "avg_rounds": 10.0, "avg_oil": 197.5, "nuclear": 15.3, "usa_cas": 0.2, "iran_cas": 2.05, "recession": 0.66}}, "archetypes": {"Пиррова победа": {"count": 230, "pct": 46.0, "example": {"rounds": 13, "oil": 146.3, "max_oil": 163.6, "iran_mil": 0, "usa_cas": 0.62, "iran_cas": 2.87, "nuclear": false}}, "Управляемая деградация": {"count": 96, "pct": 19.2, "example": {"rounds": 10, "oil": 83.0, "max_oil": 86.8, "iran_mil": 0, "usa_cas": 0.23, "iran_cas": 2.2, "nuclear": false}}, "Быстрый отход США": {"count": 68, "pct": 13.6, "example": {"rounds": 3, "oil": 83.8, "max_oil": 87.7, "iran_mil": 49.9, "usa_cas": 0, "iran_cas": 0.3, "nuclear": false}}, "Ормузское истощение": {"count": 62, "pct": 12.4, "example": {"rounds": 13, "oil": 168.1, "max_oil": 177.2, "iran_mil": 0, "usa_cas": 0.25, "iran_cas": 3.18, "nuclear": false}}, "Ядерная тень": {"count": 29, "pct": 5.8, "example": {"rounds": 11, "oil": 147.1, "max_oil": 147.1, "iran_mil": 0, "usa_cas": 0.37, "iran_cas": 2.5, "nuclear": true}}, "Прочее": {"count": 9, "pct": 1.8, "example": {"rounds": 15, "oil": 131.9, "max_oil": 137.9, "iran_mil": 0, "usa_cas": 0.3, "iran_cas": 3.75, "nuclear": true}}, "Война на истощение": {"count": 5, "pct": 1.0, "example": {"rounds": 11, "oil": 125.9, "max_oil": 141.5, "iran_mil": 0, "usa_cas": 0.47, "iran_cas": 4.57, "nuclear": false}}, "Дипломатический выход": {"count": 1, "pct": 0.2, "example": {"rounds": 18, "oil": 138.9, "max_oil": 161.0, "iran_mil": 0.0, "usa_cas": 0.4, "iran_cas": 2.97, "nuclear": true}}}, "whatif": {"Базовый сценарий": {"coalition_pct": 72.6, "iran_pct": 27.0, "other_pct": 0.4, "avg_rounds": 11.2, "avg_oil": 136.3, "nuclear": 21.0, "usa_cas": 0.24, "iran_cas": 2.37, "recession": 0.16}, "Рациональный Иран": {"coalition_pct": 80.7, "iran_pct": 19.3, "other_pct": -0.0, "avg_rounds": 11.5, "avg_oil": 136.3, "nuclear": 18.3, "usa_cas": 0.24, "iran_cas": 2.66, "recession": 0.16}, "Трамп нетерпелив": {"coalition_pct": 68.7, "iran_pct": 31.0, "other_pct": 0.3, "avg_rounds": 10.7, "avg_oil": 131.7, "nuclear": 21.0, "usa_cas": 0.27, "iran_cas": 2.32, "recession": 0.13}, "Трамп как Буш": {"coalition_pct": 80.3, "iran_pct": 19.7, "other_pct": 0.0, "avg_rounds": 11.8, "avg_oil": 139.6, "nuclear": 24.3, "usa_cas": 0.18, "iran_cas": 2.39, "recession": 0.19}, "Нефть уже $110": {"coalition_pct": 64.6, "iran_pct": 35.3, "other_pct": 0.1, "avg_rounds": 10.9, "avg_oil": 160.2, "nuclear": 20.0, "usa_cas": 0.24, "iran_cas": 2.3, "recession": 0.41}, "Ядерные объекты разбиты на 50%": {"coalition_pct": 73.7, "iran_pct": 26.0, "other_pct": 0.3, "avg_rounds": 11.0, "avg_oil": 136.3, "nuclear": 2.3, "usa_cas": 0.24, "iran_cas": 2.28, "recession": 0.17}, "Без случайных шоков": {"coalition_pct": 82.0, "iran_pct": 17.7, "other_pct": 0.3, "avg_rounds": 11.4, "avg_oil": 136.7, "nuclear": 23.0, "usa_cas": 0.19, "iran_cas": 2.25, "recession": 0.17}}};
+
+// ============================================================
+// HELPERS
+// ============================================================
+function el(id) { return document.getElementById(id); }
+
+function renderOutcomeBar(containerId, coalition, iran, other) {
+  const bar = el(containerId);
+  const c = Math.max(coalition, 0);
+  const i = Math.max(iran, 0);
+  const o = Math.max(other || (100 - c - i), 0);
+  bar.innerHTML = `
+    <div class="ob-coalition" style="width:${c}%">${c > 8 ? c.toFixed(0) + '%' : ''}</div>
+    <div class="ob-iran" style="width:${i}%">${i > 8 ? i.toFixed(0) + '%' : ''}</div>
+    ${o > 0.5 ? `<div class="ob-other" style="width:${Math.max(o,3)}%">${o > 5 ? o.toFixed(0) + '%' : ''}</div>` : ''}
+  `;
+}
+
+function renderKPIs(containerId, data) {
+  const kpis = [
+    { value: data.avg_rounds?.toFixed(1) || '?', label: 'Avg Rounds', unit: '' },
+    { value: '$' + (data.avg_oil?.toFixed(0) || '?'), label: 'Avg Oil Price', unit: '' },
+    { value: (data.nuclear?.toFixed(0) || '?') + '%', label: 'Nuclear Risk', unit: '', color: 'var(--nuclear)' },
+    { value: (data.usa_cas?.toFixed(2) || '?') + 'K', label: 'US Casualties', unit: '' },
+    { value: ((data.recession || 0) * 100).toFixed(0) + '%', label: 'Recession Risk', unit: '', color: 'var(--recession)' },
+  ];
+  el(containerId).innerHTML = kpis.map(k => `
+    <div class="kpi">
+      <div class="value" ${k.color ? `style="color:${k.color}"` : ''}>${k.value}</div>
+      <div class="label">${k.label}</div>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// 1. MAIN PREDICTION
+// ============================================================
+function renderMain() {
+  const d = DATA.whatif["Базовый сценарий"];
+  renderOutcomeBar('main-outcome-bar', d.coalition_pct, d.iran_pct, d.other_pct);
+  renderKPIs('main-kpis', d);
+  el('main-insight').innerHTML = `<strong>Reading:</strong> In ~73% of simulations the US-Israel coalition achieves some form of victory over Iran. But in ~27% of cases Iran manages a "strategic victory" &mdash; not by winning militarily, but by making the war too costly for the US to continue (oil crisis, political pressure, exhaustion).`;
+}
+
+// ============================================================
+// 2. ARCHETYPES
+// ============================================================
+function renderArchetypes() {
+  const archDescriptions = {
+    "Пиррова победа": { en: "Pyrrhic Victory", desc: "Coalition wins but oil >$150, heavy economic cost, long war. The most common outcome.", color: "#ff9800" },
+    "Управляемая деградация": { en: "Managed Degradation", desc: "Clean coalition win: Iran's military degrades, oil stays manageable, no nuclear crisis.", color: "#4caf50" },
+    "Быстрый отход США": { en: "Quick US Withdrawal", desc: "US withdraws early (political pressure, impatience). Iran declares strategic victory despite taking damage.", color: "#f44336" },
+    "Ормузское истощение": { en: "Hormuz Exhaustion", desc: "Iran blocks the Strait, oil spikes. Coalition wins militarily but the economic pain triggers US withdrawal.", color: "#ab47bc" },
+    "Ядерная тень": { en: "Nuclear Shadow Win", desc: "Coalition wins, but Iran achieves nuclear breakout. Tactical victory, strategic uncertainty.", color: "#e040fb" },
+    "Война на истощение": { en: "Attrition War", desc: "Long grinding conflict. Both sides exhausted. Iran survives long enough for US domestic pressure to force withdrawal.", color: "#ff7043" },
+    "Дипломатический выход": { en: "Diplomatic Exit", desc: "Rare: external mediation (China?) enables face-saving deal for both sides.", color: "#4fc3f7" },
+    "Прочее": { en: "Other", desc: "Edge cases: frozen conflict, unusual shock combinations.", color: "#78909c" },
+  };
+
+  const grid = el('arch-grid');
+  let html = '';
+  for (const [name, data] of Object.entries(DATA.archetypes)) {
+    const info = archDescriptions[name] || { en: name, desc: '', color: '#78909c' };
+    if (data.pct < 0.5) continue;
+    html += `
+      <div class="arch-card">
+        <div class="arch-pct">${data.pct.toFixed(0)}%</div>
+        <h3 style="color:${info.color}">${info.en}</h3>
+        <div class="arch-desc">${info.desc}</div>
+        <div class="arch-bar"><div class="arch-bar-fill" style="width:${data.pct}%;background:${info.color}"></div></div>
+        <div class="arch-stats">
+          ${data.pct}% of simulations &middot;
+          ~${data.example?.rounds || '?'} rounds &middot;
+          Peak oil $${data.example?.max_oil?.toFixed(0) || '?'}
+          ${data.example?.nuclear ? ' &middot; <span style="color:var(--nuclear)">Nuclear</span>' : ''}
+        </div>
+      </div>
+    `;
+  }
+  grid.innerHTML = html;
+}
+
+// ============================================================
+// 3. TIMELINE
+// ============================================================
+function renderTimeline() {
+  const rounds = DATA.timeline.rounds;
+  const container = el('timeline');
+
+  const players = [
+    { key: 'usa', label: 'USA' },
+    { key: 'iran', label: 'Iran' },
+    { key: 'israel', label: 'Israel' },
+    { key: 'hez', label: 'Hezbollah' },
+  ];
+
+  // Round headers
+  let html = '<div class="timeline-row"><div class="tl-label" style="font-weight:600">Round</div><div class="tl-bars">';
+  for (const r of rounds) {
+    html += `<div class="tl-cell" style="background:transparent;color:var(--dim);font-size:0.75em">${r.round}<br><span style="font-size:0.8em">${r.date.slice(5)}</span></div>`;
+  }
+  html += '</div></div>';
+
+  for (const p of players) {
+    html += `<div class="timeline-row"><div class="tl-label">${p.label}</div><div class="tl-bars">`;
+    for (const r of rounds) {
+      const strat = r[p.key];
+      const cls = 's-' + strat.replace(/ /g, '_');
+      const short = strat.replace('_', ' ');
+      html += `<div class="tl-cell ${cls}" title="${p.label}: ${strat}">${short}</div>`;
+    }
+    html += '</div></div>';
+  }
+  container.innerHTML = html;
+
+  // Metric tracks
+  renderMetricTrack('metric-oil', 'Oil Price $', rounds.map(r => r.oil), 60, 200, 'var(--oil)');
+  renderMetricTrack('metric-iran-mil', 'Iran Military', rounds.map(r => r.iran_mil), 0, 65, 'var(--iran)');
+  renderMetricTrack('metric-recession', 'Recession Risk', rounds.map(r => r.recession_risk), 0, 0.5, 'var(--recession)');
+}
+
+function renderMetricTrack(containerId, label, values, min, max, color) {
+  const wrapper = el(containerId);
+  const range = max - min || 1;
+  let html = `<div class="m-label">${label}</div><div class="metric-track">`;
+  for (const v of values) {
+    const h = Math.max(4, ((v - min) / range) * 100);
+    html += `<div class="m-bar" style="height:${h}%;background:${color}"><span class="m-val">${typeof v === 'number' ? (v > 10 ? v.toFixed(0) : v.toFixed(2)) : v}</span></div>`;
+  }
+  html += '</div>';
+  wrapper.innerHTML = html;
+}
+
+// ============================================================
+// 4. SENSITIVITY SLIDERS
+// ============================================================
+function setupSensitivity() {
+  const usaKeys = Object.keys(DATA.sensitivity_usa_patience);
+  const oilKeys = Object.keys(DATA.sensitivity_oil);
+
+  function updateUSA(idx) {
+    const key = usaKeys[idx];
+    const d = DATA.sensitivity_usa_patience[key];
+    el('usa-patience-val').textContent = key;
+    const coalition = Object.entries(d.outcomes).filter(([k]) => k.includes('coalition')).reduce((s, [, v]) => s + v, 0);
+    const iran = d.outcomes.iran_strategic_victory || 0;
+    renderOutcomeBar('usa-patience-bar', coalition, iran);
+    renderKPIs('usa-patience-kpis', d);
+
+    const patience = parseFloat(key);
+    let insight;
+    if (patience <= 0.75) {
+      insight = `At <strong>δ=${key}</strong>: Trump is very impatient. Iran's strategy of "outlasting" works ~${iran.toFixed(0)}% of the time. The US withdraws before fully degrading Iran's military.`;
+    } else if (patience <= 0.85) {
+      insight = `At <strong>δ=${key}</strong>: Moderate patience. Coalition wins ~${coalition.toFixed(0)}% but Iran still has a real chance (~${iran.toFixed(0)}%) of strategic victory through attrition.`;
+    } else {
+      insight = `At <strong>δ=${key}</strong>: High patience (like Bush post-9/11). Coalition wins ~${coalition.toFixed(0)}% and Iran's strategic victory drops to ~${iran.toFixed(0)}%. But longer wars mean higher oil and more casualties.`;
+    }
+    el('usa-patience-insight').innerHTML = insight;
+  }
+
+  function updateOil(idx) {
+    const key = oilKeys[idx];
+    const d = DATA.sensitivity_oil[key];
+    el('oil-val').textContent = '$' + key;
+    const coalition = Object.entries(d.outcomes).filter(([k]) => k.includes('coalition')).reduce((s, [, v]) => s + v, 0);
+    const iran = d.outcomes.iran_strategic_victory || 0;
+    renderOutcomeBar('oil-bar', coalition, iran);
+    renderKPIs('oil-kpis', d);
+
+    const price = parseInt(key);
+    let insight;
+    if (price <= 85) {
+      insight = `At <strong>$${key}/bbl</strong>: Low oil reduces Iran's leverage. Even Hormuz blockade doesn't create enough pain. Coalition wins ~${coalition.toFixed(0)}%.`;
+    } else if (price <= 105) {
+      insight = `At <strong>$${key}/bbl</strong>: Moderate oil. Iran's Hormuz blockade causes real damage. Recession risk rises to ${(d.recession*100).toFixed(0)}%.`;
+    } else {
+      insight = `At <strong>$${key}/bbl</strong>: High oil dramatically shifts the balance. Iran wins ~${iran.toFixed(0)}% because Hormuz blockade pushes oil to $${d.avg_oil.toFixed(0)}, triggering ${(d.recession*100).toFixed(0)}% recession risk. This is Iran's primary path to victory.`;
+    }
+    el('oil-insight').innerHTML = insight;
+  }
+
+  el('usa-patience-slider').addEventListener('input', e => updateUSA(parseInt(e.target.value)));
+  el('oil-slider').addEventListener('input', e => updateOil(parseInt(e.target.value)));
+
+  updateUSA(3);
+  updateOil(1);
+}
+
+// ============================================================
+// 5. WHAT-IF TABLE
+// ============================================================
+function renderWhatIf() {
+  const body = el('whatif-body');
+  let html = '';
+  for (const [name, d] of Object.entries(DATA.whatif)) {
+    html += `<tr>
+      <td style="font-weight:600">${name}</td>
+      <td>
+        <div class="whatif-mini-bar">
+          <div class="ob-coalition" style="width:${d.coalition_pct}%"></div>
+          <div class="ob-iran" style="width:${d.iran_pct}%"></div>
+          ${d.other_pct > 0.3 ? `<div class="ob-other" style="width:${d.other_pct}%"></div>` : ''}
+        </div>
+      </td>
+      <td style="color:var(--coalition)">${d.coalition_pct.toFixed(1)}%</td>
+      <td style="color:var(--iran)">${d.iran_pct.toFixed(1)}%</td>
+      <td>${d.avg_rounds.toFixed(1)}</td>
+      <td>$${d.avg_oil.toFixed(0)}</td>
+      <td style="color:var(--nuclear)">${d.nuclear.toFixed(0)}%</td>
+      <td style="color:${d.recession > 0.3 ? 'var(--recession)' : 'inherit'}">${(d.recession*100).toFixed(0)}%</td>
+    </tr>`;
+  }
+  body.innerHTML = html;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+renderMain();
+renderArchetypes();
+renderTimeline();
+setupSensitivity();
+renderWhatIf();
+</script>
+</body>
+</html>
