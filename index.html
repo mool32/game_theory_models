@@ -194,21 +194,16 @@ h1, h2, h3, .kpi .value, .how-card .num, .slider-val {
   gap: 2px;
   height: 100px;
   margin: 4px 0;
-  padding-left: 100px;
 }
-.metric-track .m-label {
-  position: absolute;
-  left: 0;
-  width: 96px;
-  text-align: right;
-  padding-right: 12px;
+.metric-wrapper { margin: 8px 0; }
+.metric-wrapper .m-label {
   color: var(--dim);
   font-size: 0.82em;
+  margin-bottom: 4px;
 }
-.metric-wrapper { position: relative; margin: 8px 0; }
 .m-bar {
   flex: 1;
-  min-width: 70px;
+  min-width: 0;
   border-radius: 1px 1px 0 0;
   transition: height 0.3s;
   cursor: pointer;
@@ -493,10 +488,7 @@ input[type=range]::-moz-range-track {
   .arch-grid { grid-template-columns: 1fr; }
   .deeper-grid { grid-template-columns: 1fr; }
   .kpi-row { grid-template-columns: repeat(2, 1fr); }
-  .metric-track { height: 60px; padding-left: 0; width: 100%; }
-  .metric-wrapper { overflow: hidden; }
-  .metric-wrapper .m-label { position: static; width: auto; text-align: left; padding: 0 0 4px 0; }
-  .m-bar { min-width: 0; }
+  .metric-track { height: 50px; }
   .tl-narrative { margin-left: 10px; padding-left: 18px; }
   .tl-dot { left: -24px; }
   .tl-actions { gap: 4px; }
