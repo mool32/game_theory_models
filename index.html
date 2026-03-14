@@ -493,8 +493,10 @@ input[type=range]::-moz-range-track {
   .arch-grid { grid-template-columns: 1fr; }
   .deeper-grid { grid-template-columns: 1fr; }
   .kpi-row { grid-template-columns: repeat(2, 1fr); }
-  .metric-track { height: 60px; padding-left: 0; }
+  .metric-track { height: 60px; padding-left: 0; width: 100%; }
+  .metric-wrapper { overflow: hidden; }
   .metric-wrapper .m-label { position: static; width: auto; text-align: left; padding: 0 0 4px 0; }
+  .m-bar { min-width: 0; }
   .tl-narrative { margin-left: 10px; padding-left: 18px; }
   .tl-dot { left: -24px; }
   .tl-actions { gap: 4px; }
