@@ -713,14 +713,16 @@ class NuclearThreshold:
 class RegionalActors:
     """Gulf states and regional actors that affect coalition operations.
 
-    Saudi Arabia, Bahrain, Qatar, Kuwait, Jordan provide:
-    - Base access for US forces
-    - Overflight rights
-    - Diplomatic cover
-    - Logistics and intelligence
+    v6 UPDATE: Iran directly strikes 7 countries (not just proxies).
+    Reality check (Day 36): Iran launched ballistic missiles at Bahrain,
+    Jordan, Kuwait, Qatar, Saudi Arabia, UAE, and Cyprus — hitting
+    US bases, oil infrastructure, and civilian areas.
 
-    When they're targeted by Iranian proxies, their cooperation DECREASES.
-    Each actor has a tolerance threshold.
+    This fundamentally changed the regional dynamic:
+    - Countries that were "cooperative" are now ATTACKED
+    - Paradox: being attacked can INCREASE or DECREASE cooperation
+      (rally-around-flag vs "get us out of this")
+    - Each country has different threshold and response pattern
     """
 
     # Cooperation level (0-100): how much each country supports coalition
@@ -729,6 +731,13 @@ class RegionalActors:
     qatar_cooperation: float = 60.0    # hedges between sides
     jordan_cooperation: float = 70.0   # fears domestic blowback
     kuwait_cooperation: float = 80.0   # remembers 1990
+    uae_cooperation: float = 70.0      # v6: pragmatic, hedges
+    cyprus_cooperation: float = 65.0    # v6: EU member, UK bases
+
+    # v6: Direct Iranian strikes tracking
+    countries_struck: set = field(default_factory=set)
+    total_regional_strikes: int = 0
+    civilian_casualties_regional: float = 0.0
 
     # Casualties/damage from Iranian proxy attacks
     regional_casualties: float = 0.0
@@ -736,43 +745,119 @@ class RegionalActors:
 
     def update(self, iran_strat_value: str, hez_strat_value: str,
                oil_price: float, round_num: int) -> dict:
-        """Update regional actor cooperation."""
+        """Update regional actor cooperation.
+
+        v6: Iranian direct strikes on 7 countries create complex dynamics:
+        - Initial strikes cause rally-around-flag (cooperation UP briefly)
+        - Sustained strikes cause cooperation DOWN as domestic costs mount
+        - Each country has different break point
+        """
         effects = {}
 
-        # Iranian retaliation hits regional bases/infrastructure
-        if iran_strat_value in ("retaliate", "proxy_escalation"):
-            damage = random.uniform(1, 4)
-            self.regional_casualties += random.uniform(0, 0.02)
-            self.regional_infrastructure_damage += damage
+        # v6: Direct Iranian missile strikes on regional countries
+        # This is a MAJOR escalation beyond proxy attacks
+        if iran_strat_value in ("retaliate", "proxy_escalation", "hormuz_blockade"):
+            # Iran strikes multiple countries simultaneously
+            # Probability and intensity increase with escalation
+            strike_intensity = 0.7 if iran_strat_value == "retaliate" else 0.4
 
-            # Each attack reduces cooperation
-            self.saudi_cooperation -= random.uniform(1, 3)
-            self.bahrain_cooperation -= random.uniform(0.5, 2)
-            self.qatar_cooperation -= random.uniform(2, 5)  # Qatar hedges most
-            self.jordan_cooperation -= random.uniform(1, 4)
-            self.kuwait_cooperation -= random.uniform(0.5, 2)
+            strike_targets = {
+                "bahrain": 0.85,    # 5th Fleet HQ — primary target
+                "saudi": 0.60,      # Dhahran, Prince Sultan AB
+                "kuwait": 0.55,     # Ali Al Salem, Camp Arifjan
+                "qatar": 0.50,      # Al Udeid AB — CENTCOM forward HQ
+                "uae": 0.40,        # Al Dhafra AB
+                "jordan": 0.35,     # Muwaffaq Salti AB
+                "cyprus": 0.25,     # RAF Akrotiri (UK base)
+            }
+
+            for country, base_prob in strike_targets.items():
+                if random.random() < base_prob * strike_intensity:
+                    self.countries_struck.add(country)
+                    self.total_regional_strikes += 1
+                    attr = f"{country}_cooperation"
+
+                    # v6: Dual reaction — rally-around-flag vs fear
+                    # First strike on a country: rally effect (+cooperation)
+                    # Sustained strikes: fear/exhaustion (-cooperation)
+                    times_struck = sum(1 for _ in range(self.total_regional_strikes))
+                    current = getattr(self, attr, 50)
+
+                    if country not in self.countries_struck or self.total_regional_strikes < 5:
+                        # First strikes: OUTRAGE → more cooperation
+                        rally = random.uniform(2, 6)
+                        setattr(self, attr, min(100, current + rally))
+                        effects[f"{country}_rally"] = True
+                    else:
+                        # Sustained strikes: war fatigue → less cooperation
+                        fatigue = random.uniform(3, 8)
+                        setattr(self, attr, max(0, current - fatigue))
+
+                    # Civilian casualties compound the effect
+                    civ_cas = random.uniform(0, 0.05) * strike_intensity
+                    self.civilian_casualties_regional += civ_cas
+                    self.regional_casualties += civ_cas
+
+                    # Infrastructure damage
+                    infra_damage = random.uniform(1, 5) * strike_intensity
+                    self.regional_infrastructure_damage += infra_damage
+
+        # Legacy: proxy-only attacks (less intense than direct strikes)
+        elif iran_strat_value in ("attrition",):
+            if random.random() < 0.3:  # proxy attacks less frequent
+                damage = random.uniform(0.5, 2)
+                self.regional_infrastructure_damage += damage
+                self.saudi_cooperation -= random.uniform(0.5, 1.5)
+                self.bahrain_cooperation -= random.uniform(0.3, 1)
+                self.qatar_cooperation -= random.uniform(1, 3)
+                self.jordan_cooperation -= random.uniform(0.5, 2)
+                self.kuwait_cooperation -= random.uniform(0.3, 1)
 
         # High oil prices increase SOME cooperation (Saudi benefits from high oil)
         if oil_price > 120:
             self.saudi_cooperation += 0.5  # Saudi profits from high oil
             self.qatar_cooperation += 0.3
+            self.uae_cooperation += 0.3
+
+        # v6: Countries struck by Iran may seek NATO Article 5 / EU solidarity
+        if "cyprus" in self.countries_struck:
+            effects["eu_article_solidarity"] = True
+            self.cyprus_cooperation += random.uniform(1, 3)  # EU rallies
+
+        # v6: Bahrain struck → 5th Fleet endangered, US doubles down
+        if "bahrain" in self.countries_struck:
+            self.bahrain_cooperation += random.uniform(0.5, 2)  # nowhere to go
+            effects["fifth_fleet_endangered"] = True
 
         # Time pressure: public opinion in Gulf turns against war
         if round_num > 6:
             for attr in ("saudi_cooperation", "bahrain_cooperation",
-                         "qatar_cooperation", "jordan_cooperation", "kuwait_cooperation"):
+                         "qatar_cooperation", "jordan_cooperation",
+                         "kuwait_cooperation", "uae_cooperation",
+                         "cyprus_cooperation"):
                 current = getattr(self, attr)
                 setattr(self, attr, max(10, current - random.uniform(0, 1)))
 
+        # v6: Sustained direct strikes accelerate fatigue
+        if self.total_regional_strikes > 10:
+            fatigue_mult = min(2.0, self.total_regional_strikes / 10)
+            for attr in ("qatar_cooperation", "jordan_cooperation",
+                         "uae_cooperation", "kuwait_cooperation"):
+                current = getattr(self, attr)
+                setattr(self, attr, max(5, current - random.uniform(0, 1.5) * fatigue_mult))
+
         # Clamp
         for attr in ("saudi_cooperation", "bahrain_cooperation",
-                     "qatar_cooperation", "jordan_cooperation", "kuwait_cooperation"):
+                     "qatar_cooperation", "jordan_cooperation",
+                     "kuwait_cooperation", "uae_cooperation",
+                     "cyprus_cooperation"):
             setattr(self, attr, max(0, min(100, getattr(self, attr))))
 
         # Effects on coalition
         avg_cooperation = (self.saudi_cooperation + self.bahrain_cooperation
                            + self.qatar_cooperation + self.jordan_cooperation
-                           + self.kuwait_cooperation) / 5
+                           + self.kuwait_cooperation + self.uae_cooperation
+                           + self.cyprus_cooperation) / 7
 
         if avg_cooperation < 50:
             effects["coalition_logistics_penalty"] = (50 - avg_cooperation) * 0.02
@@ -786,7 +871,15 @@ class RegionalActors:
         if self.saudi_cooperation < 30:
             effects["saudi_reduces_oil_supply"] = True  # price spike
 
+        # v6: New escalation triggers
+        if len(self.countries_struck) >= 5:
+            effects["multi_country_escalation"] = True
+            effects["un_security_council_emergency"] = True
+        if self.civilian_casualties_regional > 0.5:
+            effects["regional_humanitarian_crisis"] = True
+
         effects["avg_regional_cooperation"] = avg_cooperation
+        effects["countries_struck"] = len(self.countries_struck)
         return effects
 
     @property
@@ -795,7 +888,8 @@ class RegionalActors:
         1.0 = full access, 0.5 = severely constrained."""
         avg = (self.saudi_cooperation + self.bahrain_cooperation
                + self.qatar_cooperation + self.jordan_cooperation
-               + self.kuwait_cooperation) / 5
+               + self.kuwait_cooperation + self.uae_cooperation
+               + self.cyprus_cooperation) / 7
         return max(0.5, avg / 100.0)
 
 
@@ -835,6 +929,10 @@ class OilMarket:
     # Accumulated economic damage
     cumulative_oil_shock_weeks: int = 0  # weeks with oil > $120
 
+    # v6: Market adaptation factor — reduces disruption premium over time
+    # as supply chains adapt (Cape route, demand destruction, fuel switching)
+    market_adaptation: float = 0.0  # 0-1: 0=no adaptation, 1=fully adapted
+
     def update(self, iran_strat_value: str, is_hormuz_blockaded: bool,
                round_num: int, calendar: Calendar):
         """Update oil market state for one round (1 week)."""
@@ -870,16 +968,19 @@ class OilMarket:
             self.tankers_rerouted_pct = max(0, self.tankers_rerouted_pct - 5)
 
         # --- SPR response (US releases reserves when price > $110) ---
+        # v6 RECALIBRATION: SPR release rate +50% — Biden/Trump both
+        # release aggressively; actual rate ~1.2-1.5M bbl/day in crises
         if self.price > 110 and self.spr_remaining_mb > 10:
-            self.spr_release_rate = min(1.0, (self.price - 110) / 50.0)
+            self.spr_release_rate = min(1.5, (self.price - 110) / 35.0)  # was /50, now /35
             self.spr_remaining_mb -= self.spr_release_rate * 7  # 7 days per round
         else:
-            self.spr_release_rate = max(0, self.spr_release_rate - 0.1)
+            self.spr_release_rate = max(0, self.spr_release_rate - 0.15)
 
-        # --- OPEC response (Saudi ramps up spare capacity, but slowly) ---
-        # OPEC needs ~4-6 weeks to bring spare online
-        opec_target = min(4.0, self.disrupted_supply_mbd * 0.4)  # can offset ~40%
-        self.opec_spare_activated += (opec_target - self.opec_spare_activated) * 0.15
+        # --- OPEC response (Saudi ramps up spare capacity) ---
+        # v6 RECALIBRATION: OPEC ramp rate x2 — Saudi/UAE moved faster than
+        # expected, bringing 2M+ bbl/day online within 3 weeks
+        opec_target = min(5.0, self.disrupted_supply_mbd * 0.50)  # can offset ~50% (was 40%)
+        self.opec_spare_activated += (opec_target - self.opec_spare_activated) * 0.30  # was 0.15
 
         # --- PRICE CALCULATION ---
         # Net supply disruption after mitigants
@@ -887,8 +988,18 @@ class OilMarket:
                              - self.spr_release_rate
                              - self.opec_spare_activated)
 
+        # v6: Market adaptation — supply chains adapt over time
+        # Cape route becomes routine, demand destruction kicks in, fuel switching
+        # Reality: by Day 36, markets had adapted significantly ($105 vs predicted $136)
+        if self.disrupted_supply_mbd > 3:
+            self.market_adaptation = min(0.6, self.market_adaptation + 0.03)
+        else:
+            self.market_adaptation = max(0, self.market_adaptation - 0.02)
+
         # Price elasticity: ~$8-12 per M bbl/day disrupted (Hamilton 2003)
-        disruption_premium = net_disruption * random.uniform(8, 12)
+        # v6: reduced by market adaptation factor
+        effective_disruption = net_disruption * (1.0 - self.market_adaptation)
+        disruption_premium = effective_disruption * random.uniform(8, 12)
 
         # Insurance/rerouting cost premium
         shipping_premium = self.insurance_premium_pct * 0.8 + self.tankers_rerouted_pct * 0.1
@@ -897,10 +1008,15 @@ class OilMarket:
         seasonal = 5.0 if calendar.is_winter_demand else -2.0
 
         # Fear/speculation premium (decays over time as markets adjust)
-        speculation = max(0, 20 - round_num * 1.5) if self.disrupted_supply_mbd > 3 else 0
+        # v6 RECALIBRATION: faster decay — markets adapted faster than expected
+        # Day 36 reality: oil at $105 despite Hormuz closure, not $136
+        # Speculation premium was ~$25 in week 1, down to ~$5 by week 5
+        speculation = max(0, 25 - round_num * 2.5) if self.disrupted_supply_mbd > 3 else 0
 
         # Mean reversion force (markets adapt, alternatives found)
-        reversion = (self.pre_war_price - self.price) * 0.02
+        # v6 RECALIBRATION: stronger reversion — IEA coordination, demand
+        # destruction at high prices, and Cape route becoming routine
+        reversion = (self.pre_war_price - self.price) * 0.04  # was 0.02
 
         # Compose price
         target_price = (self.pre_war_price + disruption_premium + shipping_premium
@@ -2512,32 +2628,38 @@ def check_termination(
         return GameOutcome.NEGOTIATED_SETTLEMENT
 
     # Iran total collapse
-    if iran.military_capacity < 5 and iran.infrastructure < 10 and iran.missile_stock < 5:
+    # v6 RECALIBRATION: raised thresholds — Iran is harder to knock out than
+    # originally modeled. CENTCOM claimed ~2000 targets by Day 36 but Iran
+    # still fighting. Dispersal, hardening, and reconstitution matter.
+    if iran.military_capacity < 3 and iran.infrastructure < 8 and iran.missile_stock < 3:
         return GameOutcome.COALITION_DECISIVE_VICTORY
 
     # Iran significantly weakened + coalition declares victory
+    # v6: Raised thresholds — "victory" requires deeper degradation
     if (usa_strat == USAStrategy.DECLARE_VICTORY and
-            iran.military_capacity < 25 and iran.infrastructure < 30):
+            iran.military_capacity < 15 and iran.infrastructure < 20):
         return GameOutcome.COALITION_LIMITED_VICTORY
 
     # Coalition gives up: USA support collapses or economic damage too high
-    if usa.public_support < 15:
+    # v6: Lowered thresholds — Trump tolerates lower support than expected
+    if usa.public_support < 12:
         return GameOutcome.IRAN_STRATEGIC_VICTORY
-    if usa.economy.composite_health < 15:
+    if usa.economy.composite_health < 12:
         return GameOutcome.IRAN_STRATEGIC_VICTORY
-    # Recession forces withdrawal
-    if usa.economy.recession_risk > 0.7 and usa.economy.gdp_index < 93:
+    # Recession forces withdrawal — v6: requires deeper recession
+    if usa.economy.recession_risk > 0.75 and usa.economy.gdp_index < 91:
         return GameOutcome.IRAN_STRATEGIC_VICTORY
-    if usa_strat == USAStrategy.DECLARE_VICTORY and iran.military_capacity >= 45:
+    if usa_strat == USAStrategy.DECLARE_VICTORY and iran.military_capacity >= 50:
         return GameOutcome.IRAN_STRATEGIC_VICTORY
 
     # Israel forced out + USA follows
-    if (israel.public_support < 15 and israel.casualties > 0.8 and
+    if (israel.public_support < 12 and israel.casualties > 1.0 and
             israel_strat == IsraelStrategy.PUSH_FOR_TALKS):
         return GameOutcome.NEGOTIATED_SETTLEMENT
 
     # Frozen conflict: both exhausted but neither negotiates
-    if (usa.pain_index > 45 and iran.pain_index > 55 and
+    # v6: Higher thresholds — frozen conflict harder to trigger
+    if (usa.pain_index > 55 and iran.pain_index > 65 and
             not negotiating_coalition and not negotiating_iran):
         return GameOutcome.FROZEN_CONFLICT
 
@@ -2629,6 +2751,93 @@ class RoundResult:
     shocks: list[str]
     red_lines: list[str]
     belief_iran_rational: float
+
+
+
+@dataclass
+class WarmStartState:
+    """v6: Warm-start state for continuing simulation from real-world data.
+
+    Allows starting the simulation from a known real-world state (e.g., Day 36)
+    instead of from the beginning. This enables:
+    1. Projections from current reality (not hypothetical)
+    2. Model validation (compare first N days to actual events)
+    3. What-if analysis from known state
+    """
+
+    # Calendar state
+    days_elapsed: int = 36               # days since war started
+
+    # Player states
+    usa_military: float = 98.0           # USA barely degraded
+    usa_support: float = 48.0            # polls show ~48% support
+    usa_casualties_k: float = 0.08       # ~80 KIA
+    israel_military: float = 80.0        # some attrition
+    israel_support: float = 68.0         # still high (existential)
+    israel_casualties_k: float = 0.12    # ~120 KIA
+    iran_military: float = 28.0          # ~72% degraded (CENTCOM: ~2000 targets)
+    iran_support: float = 85.0           # rally under bombing
+    iran_casualties_k: float = 8.5       # ~8,500 military + civilian
+    iran_infrastructure: float = 25.0    # heavily damaged
+    iran_missiles: float = 30.0          # ~70% depleted
+    hez_military: float = 20.0           # heavily degraded
+    hez_missiles: float = 15.0           # mostly depleted
+
+    # Oil market
+    oil_price: float = 105.0             # Brent as of Day 36
+    hormuz_flow_pct: float = 18.0        # still mostly blocked
+    spr_remaining_mb: float = 360.0      # ~40M released
+    opec_spare_activated: float = 2.5    # Saudi/UAE ramped up
+
+    # Subsystem states
+    trump_rhetoric_intensity: float = 0.6  # "war is almost over" phase
+    trump_credibility: float = 0.65        # declining
+    mojtaba_legitimacy: float = 0.45       # still consolidating
+    mojtaba_consolidation_complete: bool = False
+    nuclear_facilities_pct: float = 15.0   # mostly destroyed
+    iran_enrichment_pct: float = 60.0      # couldn't advance under strikes
+
+    # Beliefs
+    coalition_belief_iran_rational: float = 0.40  # Iran seems more revolutionary
+    iran_belief_coalition_rational: float = 0.55
+
+    # Regional
+    countries_struck_by_iran: int = 7      # all 7 struck
+
+
+# ============================================================
+# v6: DAY-36 WARM START — Real-world state as of April 5, 2026
+# ============================================================
+
+DAY_36_STATE = WarmStartState(
+    days_elapsed=36,
+    usa_military=98.0,
+    usa_support=48.0,
+    usa_casualties_k=0.08,
+    israel_military=80.0,
+    israel_support=68.0,
+    israel_casualties_k=0.12,
+    iran_military=28.0,
+    iran_support=85.0,
+    iran_casualties_k=8.5,
+    iran_infrastructure=25.0,
+    iran_missiles=30.0,
+    hez_military=20.0,
+    hez_missiles=15.0,
+    oil_price=105.0,
+    hormuz_flow_pct=18.0,
+    spr_remaining_mb=360.0,
+    opec_spare_activated=2.5,
+    trump_rhetoric_intensity=0.6,
+    trump_credibility=0.65,
+    mojtaba_legitimacy=0.45,
+    mojtaba_consolidation_complete=False,
+    nuclear_facilities_pct=15.0,
+    iran_enrichment_pct=60.0,
+    coalition_belief_iran_rational=0.40,
+    iran_belief_coalition_rational=0.55,
+    countries_struck_by_iran=7,
+)
 
 
 def run_simulation(config: SimulationConfig) -> dict:
@@ -3054,6 +3263,598 @@ def run_simulation(config: SimulationConfig) -> dict:
     result["days_elapsed"] = calendar.days_since_start
 
     return result
+
+
+
+# ============================================================
+# v6: WARM START SIMULATION
+# ============================================================
+
+def run_simulation_from_state(
+    warm_state: WarmStartState,
+    config: SimulationConfig,
+) -> dict:
+    """Run simulation starting from a known real-world state.
+
+    v6: Instead of simulating from Day 1, starts from an observed state
+    (e.g., Day 36) and projects forward. This enables:
+    - Forward projections from current reality
+    - What-if scenarios from known state
+    - Model validation (compare projected remainder vs actual)
+    """
+    if config.seed is not None:
+        random.seed(config.seed)
+
+    # Initialize players at warm-start state
+    usa = PlayerState(
+        name="USA", military_capacity=warm_state.usa_military,
+        public_support=warm_state.usa_support, infrastructure=100,
+        discount_factor=config.usa_discount,
+        missile_stock=100, casualties=warm_state.usa_casualties_k,
+        economy=EconomicState(gdp_index=98, inflation_rate=4.5, war_spending_pct_gdp=1.2),
+    )
+    israel = PlayerState(
+        name="Israel", military_capacity=warm_state.israel_military,
+        public_support=warm_state.israel_support, infrastructure=85,
+        discount_factor=config.israel_discount,
+        missile_stock=65, casualties=warm_state.israel_casualties_k,
+        economy=EconomicState(gdp_index=96, inflation_rate=5.0, war_spending_pct_gdp=3.5),
+    )
+    iran = PlayerState(
+        name="Iran", military_capacity=warm_state.iran_military,
+        public_support=warm_state.iran_support,
+        infrastructure=warm_state.iran_infrastructure,
+        discount_factor=config.iran_discount,
+        missile_stock=warm_state.iran_missiles,
+        casualties=warm_state.iran_casualties_k,
+        escalation_level=4,  # already heavily escalated
+        audience_cost=15.0,  # Mojtaba has committed
+        economy=EconomicState(gdp_index=55, inflation_rate=85.0,
+                               war_spending_pct_gdp=8.0, trade_disruption=70),
+    )
+    hezbollah = PlayerState(
+        name="Hezbollah", military_capacity=warm_state.hez_military,
+        public_support=40, infrastructure=25,
+        discount_factor=config.hezbollah_discount,
+        missile_stock=warm_state.hez_missiles,
+        casualties=1.5,
+        economy=EconomicState(gdp_index=50, inflation_rate=40.0, trade_disruption=60),
+    )
+
+    for p in (usa, israel, iran, hezbollah):
+        p.sync_economic_health()
+
+    players = {"usa": usa, "israel": israel, "iran": iran, "hezbollah": hezbollah}
+
+    belief_iran = BeliefState(p_rational=warm_state.coalition_belief_iran_rational)
+    belief_coalition = BeliefState(p_rational=warm_state.iran_belief_coalition_rational)
+
+    oil_market = OilMarket(
+        price=warm_state.oil_price,
+        pre_war_price=87.0,  # pre-war baseline
+        hormuz_flow_pct=warm_state.hormuz_flow_pct,
+        spr_remaining_mb=warm_state.spr_remaining_mb,
+        spr_release_rate=1.2,  # already releasing aggressively
+        opec_spare_activated=warm_state.opec_spare_activated,
+        insurance_premium_pct=12.0,  # elevated but stabilized
+        tankers_rerouted_pct=60.0,   # Cape route becoming routine
+        cumulative_oil_shock_weeks=4,
+        disrupted_supply_mbd=21.0 * (1 - warm_state.hormuz_flow_pct / 100.0),
+        market_adaptation=0.45,  # significant adaptation by Day 36
+    )
+
+    # Calendar starts at warm_state.days_elapsed
+    calendar = Calendar()
+    calendar._cumulative_days = warm_state.days_elapsed
+    # Compute approximate round number for day 36:
+    # Phase 1: 7 rounds (days 1-7), Phase 2: 7 rounds (days 8-28),
+    # Phase 3: (36-28)/7 ~ 1.1 rounds → round ~15
+    calendar.current_round = 15  # approximate
+
+    # Initialize subsystems at warm-start state
+    leadership = None
+    if config.enable_leadership_transition:
+        leadership = LeadershipState(
+            leader="mojtaba",
+            transition_date=MOJTABA_ELECTED,
+            legitimacy=warm_state.mojtaba_legitimacy,
+            consolidation_complete=warm_state.mojtaba_consolidation_complete,
+        )
+
+    trump_rhetoric = None
+    if config.enable_trump_rhetoric:
+        trump_rhetoric = TrumpRhetoricState(
+            rhetoric_intensity=warm_state.trump_rhetoric_intensity,
+            credibility=warm_state.trump_credibility,
+            confidence_level=0.65,
+            cumulative_claims=warm_state.trump_rhetoric_intensity * 5,
+        )
+
+    nuclear = None
+    if config.enable_nuclear_threshold:
+        nuclear = NuclearThreshold(
+            enrichment_pct=warm_state.iran_enrichment_pct,
+            facilities_surviving_pct=warm_state.nuclear_facilities_pct,
+        )
+
+    regional = None
+    if config.enable_regional_actors:
+        regional = RegionalActors(
+            saudi_cooperation=55.0,   # shaken by strikes
+            bahrain_cooperation=70.0,  # rallied (5th Fleet)
+            qatar_cooperation=35.0,   # pulling back
+            jordan_cooperation=45.0,  # domestic pressure
+            kuwait_cooperation=60.0,  # cautious
+            uae_cooperation=50.0,     # hedging
+            cyprus_cooperation=55.0,  # EU solidarity
+            countries_struck={"bahrain", "saudi", "qatar", "jordan",
+                              "kuwait", "uae", "cyprus"},
+            total_regional_strikes=warm_state.countries_struck_by_iran * 3,
+            civilian_casualties_regional=0.15,
+            regional_casualties=0.1,
+            regional_infrastructure_damage=12.0,
+        )
+
+    fog = FogOfWar(coalition_bda_bias=config.coalition_bda_bias) if config.enable_fog_of_war else None
+    great_powers = GreatPowerDynamics() if config.enable_great_powers else None
+    if great_powers:
+        # Fast-forward great power dynamics
+        great_powers.china_hormuz_losses = 15.0  # $15B losses
+        great_powers.russia_oil_windfall = 8.0   # $8B windfall
+        great_powers.china_mediation_interest = 0.4
+        great_powers.russia_intel_support_iran = 0.15
+
+    hez_frag = None
+    if config.enable_hez_fragmentation:
+        hez_frag = HezbollahFragmentation()
+        hez_frag.command_coherence = 0.3   # heavily fragmented
+        hez_frag.iran_control = 0.4
+        hez_frag.local_ceasefire_zones = 3
+
+    history: list[RoundResult] = []
+    outcome = GameOutcome.ONGOING
+    red_lines = RedLineTracker()
+    # Mark already-crossed red lines
+    red_lines.lines_crossed = {"hormuz_blockade", "retaliate", "ground_operation"}
+    shocks_occurred: set = set()
+    v4_events = []
+
+    # Start round numbering from current calendar round
+    start_round = calendar.current_round + 1
+    max_round = start_round + config.max_rounds
+
+    for r in range(start_round, max_round + 1):
+        round_shocks = []
+        round_red_lines = []
+        round_v4_events = []
+
+        # --- v4: Leadership transition ---
+        if leadership:
+            leadership_effects = leadership.process_transition(calendar.current_date)
+            if "public_support_delta" in leadership_effects:
+                iran.public_support += leadership_effects["public_support_delta"]
+            if "military_capacity_delta" in leadership_effects:
+                iran.military_capacity += leadership_effects["military_capacity_delta"]
+            if "audience_cost_delta" in leadership_effects:
+                iran.audience_cost += leadership_effects["audience_cost_delta"]
+            if "delta_modifier" in leadership_effects:
+                iran.discount_factor = min(0.99,
+                    config.iran_discount + leadership.delta_bonus)
+            if leadership.leader != "khamenei":
+                round_v4_events.append(f"iran_leader:{leadership.leader}"
+                                        f"(legit:{leadership.legitimacy:.2f})")
+
+        # --- v5: Fog of war ---
+        perceived_iran_mil = iran.military_capacity
+        perceived_iran_miss = iran.missile_stock
+        if fog:
+            perceived_iran_mil = fog.perceived_iran_military(iran.military_capacity)
+            perceived_iran_miss = fog.perceived_iran_missiles(iran.missile_stock)
+
+        # --- v4: Trump rhetoric ---
+        if trump_rhetoric:
+            rhetoric_effects = trump_rhetoric.process_rhetoric(
+                iran.military_capacity, iran.missile_stock,
+                oil_market.price, r,
+                perceived_iran_mil=perceived_iran_mil)
+            if "usa_support_boost" in rhetoric_effects:
+                usa.public_support += rhetoric_effects["usa_support_boost"]
+            if "usa_support_penalty" in rhetoric_effects:
+                usa.public_support += rhetoric_effects["usa_support_penalty"]
+            if "oil_speculation_dampen" in rhetoric_effects:
+                oil_market.price += rhetoric_effects["oil_speculation_dampen"]
+            if rhetoric_effects.get("mission_accomplished_trap"):
+                round_v4_events.append("mission_accomplished_trap!")
+            if trump_rhetoric.rhetoric_intensity > 0:
+                round_v4_events.append(
+                    f"trump_credibility:{trump_rhetoric.credibility:.2f}")
+
+        # --- v4: Nuclear threshold ---
+        if nuclear:
+            coalition_strikes_nuclear = (calendar.days_since_start < 50)
+            nuclear_effects = nuclear.update(
+                iran.military_capacity, iran.infrastructure,
+                coalition_strikes_nuclear, r)
+            if nuclear_effects.get("nuclear_breakout_started"):
+                round_v4_events.append("NUCLEAR_BREAKOUT_STARTED!")
+                iran.escalation_level = max(iran.escalation_level, 6)
+            if nuclear_effects.get("nuclear_test"):
+                round_v4_events.append("IRAN_NUCLEAR_TEST!")
+            round_v4_events.append(f"nuclear_threat:{nuclear.threat_level:.2f}")
+
+        # --- v4: Regional actors ---
+        regional_effects = {}
+        if regional:
+            regional_effects = regional.update(
+                iran.move_history[-1] if iran.move_history else "attrition",
+                hezbollah.move_history[-1] if hezbollah.move_history else "hold_fire",
+                oil_market.price, r)
+            if regional_effects.get("base_access_crisis"):
+                round_v4_events.append("BASE_ACCESS_CRISIS!")
+                usa.military_capacity -= 3
+            if regional_effects.get("jordan_closes_airspace"):
+                round_v4_events.append("jordan_airspace_closed!")
+            avg_coop = regional_effects.get("avg_regional_cooperation", 75)
+            round_v4_events.append(f"regional_coop:{avg_coop:.0f}")
+
+        # --- v5: Great power dynamics ---
+        if great_powers:
+            great_powers.update(oil_market.price, oil_market.hormuz_flow_pct,
+                                iran.military_capacity, r, calendar.round_weight)
+            if great_powers.iran_intel_bonus > 0.05:
+                round_v4_events.append(f"russia_intel:{great_powers.russia_intel_support_iran:.2f}")
+            if great_powers.china_mediation_interest > 0.3:
+                round_v4_events.append(f"china_mediation:{great_powers.china_mediation_interest:.2f}")
+            if great_powers.iran_intel_bonus > 0.03:
+                iran.military_capacity += great_powers.iran_intel_bonus
+
+        # --- v5: Hezbollah fragmentation ---
+        if hez_frag:
+            israel_hitting_hez = (len(israel.move_history) > 0 and
+                                  israel.move_history[-1] in ("joint_strikes", "independent_ops"))
+            iran_last = iran.move_history[-1] if iran.move_history else "attrition"
+            hez_frag.update(hezbollah.military_capacity, iran_last,
+                            israel_hitting_hez, calendar.round_weight)
+
+        # --- v5: Iran rally under bombing ---
+        if config.enable_iran_rally:
+            last_usa = usa.move_history[-1] if usa.move_history else "air_strikes"
+            if last_usa in ("air_strikes", "ground_operation", "standoff_only"):
+                rally_delta = iran_rally_under_bombing(
+                    iran.public_support,
+                    iran.casualties * 0.1,
+                    max(0, 75 - iran.infrastructure),
+                    config.iran_is_revolutionary,
+                    calendar.weeks_elapsed)
+                iran.public_support += rally_delta
+
+        # --- v5: War Powers Act ---
+        if config.enable_war_powers and calendar.war_powers_pressure > 0:
+            wp = calendar.war_powers_pressure
+            if wp > 0.5:
+                round_v4_events.append(f"war_powers_pressure:{wp:.2f}")
+                usa.public_support -= wp * 2.0
+                if wp >= 1.0:
+                    round_v4_events.append("WAR_POWERS_DEADLINE!")
+                    usa.public_support -= 5.0
+                    usa.audience_cost -= 3.0
+
+        # --- Stochastic shocks ---
+        if config.enable_shocks:
+            triggered = roll_shocks(r, shocks_occurred, calendar.round_weight)
+            apply_shocks(triggered, players)
+            round_shocks = [f"{s[0].name}:{s[1]}" for s in triggered]
+
+        # --- Strategy selection ---
+        iran_for_coalition = PlayerState(
+            name="Iran_perceived",
+            military_capacity=perceived_iran_mil,
+            public_support=iran.public_support,
+            infrastructure=iran.infrastructure,
+            discount_factor=iran.discount_factor,
+            missile_stock=perceived_iran_miss,
+            casualties=iran.casualties,
+            displaced=iran.displaced,
+            audience_cost=iran.audience_cost,
+            escalation_level=iran.escalation_level,
+            economy=iran.economy,
+        )
+        usa_pref = select_usa_strategy(usa, iran_for_coalition, israel, belief_iran, r,
+                                        oil_market, calendar)
+        israel_pref = select_israel_strategy(israel, usa, iran_for_coalition, hezbollah,
+                                              belief_iran, r, oil_market, calendar)
+
+        usa_strat, israel_strat, coord_info = coalition_coordination(
+            usa, israel, usa_pref, israel_pref, r,
+            trump_rhetoric=trump_rhetoric, regional=regional)
+        if coord_info.get("israel_racing_clock"):
+            round_v4_events.append("israel_racing_clock!")
+        if coord_info.get("mission_accomplished_forcing"):
+            round_v4_events.append("trump_forced_to_exit!")
+
+        iran_strat = select_iran_strategy(
+            iran, usa, hezbollah, belief_coalition, r, oil_market, calendar,
+            is_revolutionary=config.iran_is_revolutionary,
+        )
+        if (leadership and not leadership.consolidation_complete
+                and iran_strat == IranStrategy.NEGOTIATE
+                and iran.military_capacity > 8):
+            iran_strat = IranStrategy.ATTRITION
+            round_v4_events.append("mojtaba_blocks_negotiation!")
+
+        hez_strat = select_hezbollah_strategy(hezbollah, iran, israel, iran_strat, r)
+
+        if hez_frag:
+            if (hez_frag.ceasefire_probability_modifier > 0 and
+                    random.random() < hez_frag.ceasefire_probability_modifier):
+                hez_strat = HezbollahStrategy.HOLD_FIRE
+                round_v4_events.append("hez_local_ceasefire!")
+            if (hez_frag.command_coherence < 0.4 and
+                    hez_strat == HezbollahStrategy.FULL_BARRAGE):
+                hez_strat = HezbollahStrategy.CALIBRATED_STRIKES
+                round_v4_events.append("hez_too_fragmented_for_barrage!")
+
+        # --- Red line checks ---
+        round_red_lines.extend(red_lines.check_and_cross(usa_strat.value, "usa"))
+        round_red_lines.extend(red_lines.check_and_cross(israel_strat.value, "israel"))
+        round_red_lines.extend(red_lines.check_and_cross(iran_strat.value, "iran"))
+        round_red_lines.extend(red_lines.check_and_cross(hez_strat.value, "hezbollah"))
+
+        # --- Payoffs ---
+        p_usa = usa_payoff(usa_strat, iran_strat, hez_strat, israel_strat,
+                           usa, iran, oil_market, r, calendar,
+                           trump_rhetoric=trump_rhetoric, regional=regional,
+                           nuclear=nuclear)
+        p_israel = israel_payoff(usa_strat, iran_strat, hez_strat, israel_strat,
+                                 israel, iran, hezbollah, r, oil_market, calendar)
+        p_iran = iran_payoff(usa_strat, iran_strat, hez_strat, iran, usa,
+                             oil_market, r, calendar,
+                             leadership=leadership, nuclear=nuclear)
+        p_hez = hezbollah_payoff(hez_strat, iran_strat, israel_strat, hezbollah, israel, r)
+
+        # --- Bayesian updates ---
+        belief_iran.update(iran_strat.value, iran.escalation_level, iran.pain_index)
+        belief_coalition.update(usa_strat.value, usa.escalation_level, usa.pain_index)
+
+        # --- ActionVectors ---
+        usa_av = ActionVector.from_enum(usa_strat.value)
+        israel_av = ActionVector.from_enum(israel_strat.value)
+        iran_av = ActionVector.from_enum(iran_strat.value)
+        hez_av = ActionVector.from_enum(hez_strat.value)
+
+        # --- Apply effects ---
+        apply_round_effects(
+            usa_strat, israel_strat, iran_strat, hez_strat,
+            usa, israel, iran, hezbollah, oil_market, calendar,
+            usa_av=usa_av, israel_av=israel_av,
+            iran_av=iran_av, hez_av=hez_av,
+        )
+
+        # Dynamic delta
+        if oil_market.price > 100:
+            hormuz_hit = hormuz_delta_attack_effect(
+                oil_market.price, usa.economy.inflation_rate,
+                calendar.weeks_to_midterms)
+            usa.discount_factor = max(0.65,
+                config.usa_discount - hormuz_hit)
+
+        # --- Record ---
+        for p in players.values():
+            p.move_history.append(None)
+        usa.move_history[-1] = usa_strat.value
+        israel.move_history[-1] = israel_strat.value
+        iran.move_history[-1] = iran_strat.value
+        hezbollah.move_history[-1] = hez_strat.value
+
+        history.append(RoundResult(
+            round_num=r,
+            date=str(calendar.current_date),
+            usa_strategy=usa_strat.value,
+            israel_strategy=israel_strat.value,
+            iran_strategy=iran_strat.value,
+            hezbollah_strategy=hez_strat.value,
+            usa_payoff=p_usa, israel_payoff=p_israel,
+            iran_payoff=p_iran, hezbollah_payoff=p_hez,
+            oil_price=round(oil_market.price, 1),
+            hormuz_flow_pct=round(oil_market.hormuz_flow_pct, 1),
+            spr_remaining=round(oil_market.spr_remaining_mb, 1),
+            usa_inflation=round(usa.economy.inflation_rate, 1),
+            israel_inflation=round(israel.economy.inflation_rate, 1),
+            iran_inflation=round(iran.economy.inflation_rate, 1),
+            usa_gdp_index=round(usa.economy.gdp_index, 1),
+            iran_gdp_index=round(iran.economy.gdp_index, 1),
+            usa_war_cost_pct_gdp=round(usa.economy.war_spending_pct_gdp, 2),
+            usa_recession_risk=round(usa.economy.recession_risk, 2),
+            usa_military=round(usa.military_capacity, 1),
+            israel_military=round(israel.military_capacity, 1),
+            iran_military=round(iran.military_capacity, 1),
+            hez_military=round(hezbollah.military_capacity, 1),
+            usa_support=round(usa.public_support, 1),
+            israel_support=round(israel.public_support, 1),
+            iran_support=round(iran.public_support, 1),
+            usa_pain=round(usa.pain_index, 1),
+            iran_pain=round(iran.pain_index, 1),
+            israel_pain=round(israel.pain_index, 1),
+            iran_missiles=round(iran.missile_stock, 1),
+            hez_missiles=round(hezbollah.missile_stock, 1),
+            iran_casualties=round(iran.casualties, 2),
+            usa_casualties=round(usa.casualties, 2),
+            israel_casualties=round(israel.casualties, 2),
+            weeks_to_midterms=calendar.weeks_to_midterms,
+            shocks=round_shocks,
+            red_lines=round_red_lines,
+            belief_iran_rational=round(belief_iran.p_rational, 3),
+        ))
+
+        if round_v4_events:
+            v4_events.append({"round": r, "events": round_v4_events})
+
+        # --- Termination ---
+        outcome = check_termination(
+            usa_strat, iran_strat, israel_strat, hez_strat,
+            usa, israel, iran, hezbollah,
+        )
+        if outcome != GameOutcome.ONGOING:
+            break
+
+    if outcome == GameOutcome.ONGOING:
+        outcome = GameOutcome.FROZEN_CONFLICT
+
+    result = {
+        "outcome": outcome.value,
+        "rounds_played": len(history),
+        "warm_start_day": warm_state.days_elapsed,
+        "final_date": str(calendar.current_date),
+        "final_oil_price": round(oil_market.price, 1),
+        "hormuz_flow_pct": round(oil_market.hormuz_flow_pct, 1),
+        "spr_remaining_mb": round(oil_market.spr_remaining_mb, 1),
+        "usa_inflation": round(usa.economy.inflation_rate, 1),
+        "usa_gdp_index": round(usa.economy.gdp_index, 1),
+        "usa_war_cost_pct_gdp": round(usa.economy.war_spending_pct_gdp, 2),
+        "usa_recession_risk": round(usa.economy.recession_risk, 2),
+        "oil_shock_weeks": oil_market.cumulative_oil_shock_weeks,
+        "final_usa_military": round(usa.military_capacity, 1),
+        "final_israel_military": round(israel.military_capacity, 1),
+        "final_iran_military": round(iran.military_capacity, 1),
+        "final_hezbollah_military": round(hezbollah.military_capacity, 1),
+        "total_iran_casualties_k": round(iran.casualties, 2),
+        "total_usa_casualties_k": round(usa.casualties, 2),
+        "total_israel_casualties_k": round(israel.casualties, 2),
+        "total_hezbollah_casualties_k": round(hezbollah.casualties, 2),
+        "iran_missiles_remaining": round(iran.missile_stock, 1),
+        "hez_missiles_remaining": round(hezbollah.missile_stock, 1),
+        "belief_iran_rational": round(belief_iran.p_rational, 3),
+        "red_lines_crossed": list(red_lines.lines_crossed),
+        "all_shocks": list(shocks_occurred),
+        "history": history,
+    }
+
+    result["v4_events"] = v4_events
+    result["usa_final_delta"] = round(usa.discount_factor, 4)
+    result["iran_final_delta"] = round(iran.discount_factor, 4)
+
+    if leadership:
+        result["iran_leader"] = leadership.leader
+        result["iran_leader_legitimacy"] = round(leadership.legitimacy, 2)
+        result["iran_leader_consolidated"] = leadership.consolidation_complete
+    if trump_rhetoric:
+        result["trump_rhetoric_intensity"] = round(trump_rhetoric.rhetoric_intensity, 2)
+        result["trump_credibility"] = round(trump_rhetoric.credibility, 2)
+        result["mission_accomplished_trap"] = trump_rhetoric.commitment_trap_active
+    if nuclear:
+        result["nuclear_status"] = nuclear.status.value
+        result["nuclear_threat_level"] = round(nuclear.threat_level, 2)
+        result["nuclear_facilities_surviving"] = round(nuclear.facilities_surviving_pct, 1)
+    if regional:
+        result["regional_cooperation_avg"] = round(
+            (regional.saudi_cooperation + regional.bahrain_cooperation
+             + regional.qatar_cooperation + regional.jordan_cooperation
+             + regional.kuwait_cooperation + regional.uae_cooperation
+             + regional.cyprus_cooperation) / 7, 1)
+        result["countries_struck"] = len(regional.countries_struck)
+    if fog:
+        result["bda_bias"] = fog.coalition_bda_bias
+    if great_powers:
+        result["china_mediation_interest"] = round(great_powers.china_mediation_interest, 2)
+        result["russia_oil_windfall_b"] = round(great_powers.russia_oil_windfall, 1)
+    if hez_frag:
+        result["hez_coherence"] = round(hez_frag.command_coherence, 2)
+        result["hez_iran_control"] = round(hez_frag.iran_control, 2)
+
+    result["war_powers_active"] = calendar.war_powers_pressure >= 1.0
+    result["days_elapsed"] = calendar.days_since_start
+
+    return result
+
+
+def monte_carlo_warm_start(
+    n_simulations: int = 500,
+    warm_state: Optional[WarmStartState] = None,
+    config_overrides: Optional[dict] = None,
+) -> dict:
+    """Monte Carlo from warm-start state.
+
+    v6: Runs N simulations from a known real-world state.
+    Default: DAY_36_STATE (April 5, 2026 — Day 36 of war).
+    """
+    if warm_state is None:
+        warm_state = DAY_36_STATE
+
+    base = SimulationConfig()
+    if config_overrides:
+        for k, v in config_overrides.items():
+            if hasattr(base, k):
+                setattr(base, k, v)
+
+    outcomes = {}
+    rounds_list = []
+    oil_list = []
+    iran_cas = []
+    usa_cas = []
+    israel_cas = []
+    usa_recession_risk_list = []
+    nuclear_breakout_count = 0
+    days_list = []
+
+    for i in range(n_simulations):
+        cfg = SimulationConfig(
+            max_rounds=base.max_rounds,
+            iran_is_revolutionary=base.iran_is_revolutionary,
+            initial_oil_price=base.initial_oil_price,
+            seed=i,
+            usa_discount=base.usa_discount,
+            israel_discount=base.israel_discount,
+            iran_discount=base.iran_discount,
+            hezbollah_discount=base.hezbollah_discount,
+            coalition_belief_iran_rational=base.coalition_belief_iran_rational,
+            iran_belief_coalition_rational=base.iran_belief_coalition_rational,
+            enable_shocks=base.enable_shocks,
+            enable_leadership_transition=base.enable_leadership_transition,
+            enable_trump_rhetoric=base.enable_trump_rhetoric,
+            enable_nuclear_threshold=base.enable_nuclear_threshold,
+            enable_regional_actors=base.enable_regional_actors,
+            iran_initial_enrichment_pct=base.iran_initial_enrichment_pct,
+            iran_nuclear_facilities_pct=base.iran_nuclear_facilities_pct,
+            enable_fog_of_war=base.enable_fog_of_war,
+            enable_great_powers=base.enable_great_powers,
+            enable_hez_fragmentation=base.enable_hez_fragmentation,
+            enable_iran_rally=base.enable_iran_rally,
+            enable_war_powers=base.enable_war_powers,
+            coalition_bda_bias=base.coalition_bda_bias,
+        )
+        result = run_simulation_from_state(warm_state, cfg)
+
+        o = result["outcome"]
+        outcomes[o] = outcomes.get(o, 0) + 1
+        rounds_list.append(result["rounds_played"])
+        oil_list.append(result["final_oil_price"])
+        iran_cas.append(result["total_iran_casualties_k"])
+        usa_cas.append(result["total_usa_casualties_k"])
+        israel_cas.append(result["total_israel_casualties_k"])
+        usa_recession_risk_list.append(result["usa_recession_risk"])
+        days_list.append(result["days_elapsed"])
+
+        if any("NUCLEAR_BREAKOUT" in str(e) for e in result.get("v4_events", [])):
+            nuclear_breakout_count += 1
+
+    n = n_simulations
+    return {
+        "n_simulations": n,
+        "warm_start_day": warm_state.days_elapsed,
+        "outcome_distribution": {
+            k: round(v / n * 100, 1) for k, v in sorted(outcomes.items())
+        },
+        "avg_additional_rounds": round(sum(rounds_list) / n, 1),
+        "avg_total_days": round(sum(days_list) / n, 1),
+        "median_total_days": sorted(days_list)[n // 2],
+        "avg_final_oil_price": round(sum(oil_list) / n, 1),
+        "avg_usa_recession_risk": round(sum(usa_recession_risk_list) / n, 2),
+        "avg_iran_casualties_k": round(sum(iran_cas) / n, 2),
+        "avg_usa_casualties_k": round(sum(usa_cas) / n, 2),
+        "avg_israel_casualties_k": round(sum(israel_cas) / n, 2),
+        "nuclear_breakout_rate": round(nuclear_breakout_count / n, 3),
+    }
+
 
 
 # ============================================================
